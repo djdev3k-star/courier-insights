@@ -13,6 +13,34 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="Courier Insights", layout="wide", initial_sidebar_state="expanded")
 
 # ============================================================================
+# CUSTOM STYLING
+# ============================================================================
+
+st.markdown("""
+<style>
+    .logo-container {
+        text-align: center;
+        padding: 10px 0;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #FF8C00;
+    }
+    .metrics-header {
+        background: linear-gradient(to right, #19376D, #4682B4);
+        padding: 15px;
+        border-radius: 8px;
+        color: white;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    .page-title {
+        color: #19376D;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ============================================================================
 # GLOBAL HELPER FUNCTIONS
 # ============================================================================
 
@@ -142,22 +170,27 @@ high_pay_trips = (tx['Net Earnings'] > 15.00).sum()
 # ============================================================================
 
 with st.sidebar:
+    # Display JTech Logo
+    st.markdown('<div class="logo-container">', unsafe_allow_html=True)
+    st.image("JTechLogistics_Logo.svg", use_column_width=True, width=200)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     st.title("🚗 Courier Insights")
     st.divider()
     
-    # Persistent metrics
-    st.subheader("📊 Your Numbers")
+    # Persistent metrics header
+    st.markdown('<div class="metrics-header">📊 YOUR NUMBERS</div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
-    col1.metric("Earnings", format_money(total_earnings), label_visibility="visible")
-    col2.metric("Miles", f"{total_miles:,.0f}", label_visibility="visible")
+    col1.metric("💰 Earnings", format_money(total_earnings), label_visibility="collapsed")
+    col2.metric("🛣️ Miles", f"{total_miles:,.0f}", label_visibility="collapsed")
     
     col1, col2 = st.columns(2)
-    col1.metric("$/Mile", format_money(avg_per_mile), label_visibility="visible")
-    col2.metric("Trips", f"{total_trips:,}", label_visibility="visible")
+    col1.metric("⚡ $/Mile", format_money(avg_per_mile), label_visibility="collapsed")
+    col2.metric("🚚 Trips", f"{total_trips:,}", label_visibility="collapsed")
     
     col1, col2 = st.columns(2)
-    col1.metric("Refund Rate", format_percent(refund_rate), label_visibility="visible")
-    col2.metric("Refunds", f"{refund_count}", label_visibility="visible")
+    col1.metric("🔄 Refund %", format_percent(refund_rate), label_visibility="collapsed")
+    col2.metric("❌ Refunds", f"{refund_count}", label_visibility="collapsed")
     
     st.divider()
     
