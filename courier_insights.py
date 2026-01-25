@@ -485,9 +485,22 @@ def load_data():
   transactions['Pickup Area'] = transactions['Pickup City'] + ' ' + transactions['Pickup Zip']
   transactions['Dropoff Area'] = transactions['Dropoff City'] + ' ' + transactions['Dropoff Zip']
   
-  # Normalize city names (fix case inconsistencies like "DALLAS" vs "Dallas")
+  # Normalize all text fields - strip whitespace and standardize case
+  # Strip leading/trailing whitespace from all text columns
+  for col in transactions.columns:
+    if transactions[col].dtype == 'object':  # Text columns
+      transactions[col] = transactions[col].str.strip() if transactions[col].dtype == 'object' else transactions[col]
+  
+  # Normalize city names to title case (DALLAS -> Dallas, dallas -> Dallas)
   transactions['Pickup City'] = transactions['Pickup City'].str.title()
   transactions['Dropoff City'] = transactions['Dropoff City'].str.title()
+  
+  # Normalize restaurant names to title case
+  transactions['Restaurant'] = transactions['Restaurant'].str.title()
+  
+  # Rebuild area strings with normalized data
+  transactions['Pickup Area'] = transactions['Pickup City'] + ' ' + transactions['Pickup Zip']
+  transactions['Dropoff Area'] = transactions['Dropoff City'] + ' ' + transactions['Dropoff Zip']
   
   return {
     'transactions': transactions,
