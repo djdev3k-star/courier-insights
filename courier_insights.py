@@ -382,6 +382,7 @@ def get_restaurant_logo(restaurant_name):
   return RESTAURANT_LOGOS.get(restaurant_name)
 
 @st.cache_data
+@st.cache_data
 def load_geocoded_addresses():
   """Load cached geocoded addresses, create if doesn't exist"""
   geocode_file = Path('data/geocoded_addresses.csv')
@@ -1465,7 +1466,7 @@ elif page == "Routes":
   
   if not pickup_with_address.empty:
     # Get unique addresses to geocode
-    unique_addresses = pickup_with_address['Pickup address'].unique().tolist()
+    unique_addresses = tuple(pickup_with_address['Pickup address'].unique().tolist())
     
     with st.spinner(f"🔄 Geocoding {len(unique_addresses)} addresses... (this may take a moment)"):
       coords_dict = get_coordinates_for_addresses(unique_addresses)
