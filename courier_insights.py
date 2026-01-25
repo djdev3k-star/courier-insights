@@ -38,19 +38,19 @@ st.markdown("""
     
     /* Sidebar Metrics - Clean and Minimal */
     .sidebar-metrics {
-        background: #f8f9fa;
+        background: #f5f6f8;
         padding: 16px;
         border-radius: 10px;
         margin-bottom: 24px;
-        border-left: 4px solid #0066cc;
+        border-left: 4px solid #3b5998;
     }
     
     .metrics-header {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
-        color: #666;
+        color: #5a6c7d;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.6px;
         margin-bottom: 12px;
         display: block;
     }
@@ -58,17 +58,17 @@ st.markdown("""
     .metric-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 8px;
+        margin-bottom: 9px;
         font-size: 13px;
     }
     
     .metric-label {
-        color: #666;
-        font-weight: 500;
+        color: #5a6c7d;
+        font-weight: 600;
     }
     
     .metric-value {
-        color: #0066cc;
+        color: #3b5998;
         font-weight: 700;
     }
     
@@ -78,12 +78,12 @@ st.markdown("""
     }
     
     .nav-label {
-        font-size: 11px;
-        font-weight: 700;
-        color: #999;
+        font-size: 10px;
+        font-weight: 800;
+        color: #8892a3;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 12px 0 8px 0;
+        letter-spacing: 0.7px;
+        padding: 12px 0 10px 0;
         display: block;
     }
     
@@ -93,15 +93,21 @@ st.markdown("""
     }
     
     .stRadio > label {
-        padding: 8px 12px !important;
+        padding: 9px 12px !important;
         border-radius: 6px !important;
-        font-size: 14px !important;
+        font-size: 13px !important;
         transition: all 0.2s ease !important;
-        margin-bottom: 4px !important;
+        margin-bottom: 5px !important;
+        color: #2d3748 !important;
+        border-left: 3px solid transparent !important;
+        padding-left: 15px !important;
+        font-weight: 500;
     }
     
     .stRadio > label:hover {
-        background: #f0f2f6 !important;
+        background: #eef2f6 !important;
+        border-left-color: #3b5998 !important;
+        color: #3b5998 !important;
     }
     
     /* Page Title */
@@ -113,21 +119,21 @@ st.markdown("""
     
     /* Page Header Styling */
     h1 {
-        color: #1a1a1a !important;
-        border-bottom: 2px solid #0066cc;
+        color: #2d3748 !important;
+        border-bottom: 2px solid #3b5998;
         padding-bottom: 12px;
         margin-bottom: 16px;
     }
     
     h2 {
-        color: #0066cc !important;
+        color: #3b5998 !important;
         margin-top: 24px;
         margin-bottom: 12px;
         font-weight: 700;
     }
     
     h3 {
-        color: #333 !important;
+        color: #4a5568 !important;
         margin-top: 16px;
         margin-bottom: 10px;
     }
@@ -347,22 +353,22 @@ with st.sidebar:
     # Navigation Section
     st.markdown('<span class="nav-label">Navigation</span>', unsafe_allow_html=True)
     page = st.radio("", [
-        "🏠 Opportunity Finder",
-        "📍 Location Intelligence", 
-        "⏰ Schedule Optimizer",
-        "🛣️ Mileage Efficiency",
-        "⚠️ Anomaly Detection",
-        "� Payment Reconciliation",
-        "�🔍 Dispute Forensics",
-        "📊 Trends & Forecast"
+        "Opportunity Finder",
+        "Location Intelligence", 
+        "Schedule Optimizer",
+        "Mileage Efficiency",
+        "Anomaly Detection",
+        "Payment Reconciliation",
+        "Dispute Forensics",
+        "Trends & Forecast"
     ], label_visibility="collapsed")
 
 # ============================================================================
 # PAGE: OPPORTUNITY FINDER (Home)
 # ============================================================================
 
-if page == "🏠 Opportunity Finder":
-    st.title("🏠 Opportunity Finder")
+if page == "Opportunity Finder":
+    st.title("Opportunity Finder")
     st.write("Outliers, alerts, and opportunities to optimize your earnings")
     
     st.divider()
@@ -452,8 +458,8 @@ if page == "🏠 Opportunity Finder":
 # PAGE: LOCATION INTELLIGENCE
 # ============================================================================
 
-elif page == "📍 Location Intelligence":
-    st.title("📍 Location Intelligence")
+elif page == "Location Intelligence":
+    st.title("Location Intelligence")
     st.write("Which cities, restaurants, and areas pay best?")
     
     st.divider()
@@ -597,8 +603,8 @@ elif page == "📍 Location Intelligence":
 # PAGE: SCHEDULE OPTIMIZER
 # ============================================================================
 
-elif page == "⏰ Schedule Optimizer":
-    st.title("⏰ Schedule Optimizer")
+elif page == "Schedule Optimizer":
+    st.title("Schedule Optimizer")
     st.write("Best times to work: hours and days that pay the most")
     
     st.divider()
@@ -672,8 +678,8 @@ elif page == "⏰ Schedule Optimizer":
 # PAGE: MILEAGE EFFICIENCY
 # ============================================================================
 
-elif page == "🛣️ Mileage Efficiency":
-    st.title("🛣️ Mileage Efficiency")
+elif page == "Mileage Efficiency":
+    st.title("Mileage Efficiency")
     st.write("Minimize driving, maximize earnings. Track your efficiency.")
     
     st.divider()
@@ -753,8 +759,8 @@ elif page == "🛣️ Mileage Efficiency":
 # PAGE: ANOMALY DETECTION
 # ============================================================================
 
-elif page == "⚠️ Anomaly Detection":
-    st.title("⚠️ Anomaly Detection")
+elif page == "Anomaly Detection":
+    st.title("Anomaly Detection")
     st.write("Payment issues, refunds, and reconciliation problems")
     
     st.divider()
@@ -833,8 +839,8 @@ elif page == "⚠️ Anomaly Detection":
 # PAGE: PAYMENT RECONCILIATION
 # ============================================================================
 
-elif page == "💰 Payment Reconciliation":
-    st.title("💰 Payment Reconciliation")
+elif page == "Payment Reconciliation":
+    st.title("Payment Reconciliation")
     st.write("Compare Uber payments reported to bank deposits • Track payment processing timeline")
     
     st.divider()
@@ -958,8 +964,8 @@ elif page == "💰 Payment Reconciliation":
 # PAGE: DISPUTE FORENSICS
 # ============================================================================
 
-elif page == "🔍 Dispute Forensics":
-    st.title("🔍 Dispute Forensics")
+elif page == "Dispute Forensics":
+    st.title("Dispute Forensics")
     st.write("Investigate problem trips, refunds, and issues • Find Trip IDs for Uber disputes")
     
     st.divider()
@@ -1116,8 +1122,8 @@ Trips with No Tips: {len(filtered[filtered['Tip'] == 0])}
 # PAGE: TRENDS & FORECAST
 # ============================================================================
 
-elif page == "📊 Trends & Forecast":
-    st.title("📊 Trends & Forecast")
+elif page == "Trends & Forecast":
+    st.title("Trends & Forecast")
     st.write("Long-term patterns, seasonality, and what's changing")
     
     st.divider()
