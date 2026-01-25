@@ -202,7 +202,8 @@ with st.sidebar:
         "⏰ Schedule Optimizer",
         "🛣️ Mileage Efficiency",
         "⚠️ Anomaly Detection",
-        "🔍 Dispute Forensics",
+        "� Payment Reconciliation",
+        "�🔍 Dispute Forensics",
         "📊 Trends & Forecast"
     ], label_visibility="collapsed")
 
@@ -677,6 +678,123 @@ elif page == "⚠️ Anomaly Detection":
                 st.metric("Unaccounted Gap", value)
             elif 'Status' in metric:
                 st.success(value)
+
+# ============================================================================
+# PAGE: PAYMENT RECONCILIATION
+# ============================================================================
+
+elif page == "💰 Payment Reconciliation":
+    st.title("💰 Payment Reconciliation")
+    st.write("Compare Uber payments reported to bank deposits • Track payment processing timeline")
+    
+    st.divider()
+    
+    # Summary metrics
+    st.subheader("📊 Payment Summary")
+    
+    if not audit_df.empty and 'vs reporting' in audit_df.columns:
+        # Parse payment dates
+        audit_df['Payment Date'] = pd.to_datetime(audit_df['vs reporting'], errors='coerce')
+        if 'Bank Deposit Date' in audit_df.columns:
+            audit_df['Bank Deposit Date'] = pd.to_datetime(audit_df['Bank Deposit Date'], errors='coerce')
+        
+        total_payments = audit_df['Net Earnings'].sum() if 'Net Earnings' in audit_df.columns else 0
+        total_deposits = audit_df[audit_df['Reconciliation Status'] == 'BANK_MATCHED']['Net Earnings'].sum() if 'Reconciliation Status' in audit_df.columns else 0
+        
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Uber Reported", format_money(total_payments))
+        col2.metric("Bank Deposits", format_money(total_deposits))
+        col3.metric("Gap", format_money(total_payments - total_deposits))
+        col4.metric("Match Rate", format_percent((total_deposits / total_payments * 100) if total_payments > 0 else 0))
+    
+    st.divider()
+    
+    # Daily breakdown
+    st.subheader("📅 Daily Payment vs Bank Timeline")
+    
+    if not audit_df.empty:
+        # Group by payment date to see daily totals
+        daily_payment = audit_df.groupby(audit_df['Payment Date'].dt.date).agg({
+            'Net Earnings': 'sum'
+        }).reset_index()
+        daily_payment.columns = ['Date', 'Payments Reported']
+        
+        # Group by deposit date to see daily deposits
+        if 'Bank Deposit Date' in audit_df.columns:
+            daily_deposit = audit_df.dropna(subset=['Bank Deposit Date']).groupby(audit_df['Bank Deposit Date'].dt.date).agg({
+                'Net Earnings': 'sum'
+            }).reset_index()
+            daily_deposit.columns = ['Date', 'Bank Deposited']
+            
+            # Merge to compare side-by-side
+            daily_comparison = daily_payment.merge(daily_deposit, on='Date', how='outer').fillna(0)
+            daily_comparison['Gap'] = daily_comparison['Payments Reported'] - daily_comparison['Bank Deposited']
+            
+            # Format for display
+            display_comparison = daily_comparison.copy()
+            display_comparison['Payments Reported'] = display_comparison['Payments Reported'].apply(format_money)
+            display_comparison['Bank Deposited'] = display_comparison['Bank Deposited'].apply(format_money)
+            display_comparison['Gap'] = display_comparison['Gap'].apply(format_money)
+            display_comparison['Date'] = display_comparison['Date'].astype(str)
+            
+            st.dataframe(display_comparison, width='stretch', hide_index=True)
+            st.caption("Shows daily breakdown: When Uber reported payments vs when they actually hit your bank account")
+    
+    st.divider()
+    
+    # Timeline visualization
+    st.subheader("📈 Payment Processing Timeline")
+    
+    if not audit_df.empty and 'Payment Date' in audit_df.columns and 'Bank Deposit Date' in audit_df.columns:
+        # Calculate processing delay (days between payment and deposit)
+        audit_df['Processing Days'] = (audit_df['Bank Deposit Date'] - audit_df['Payment Date']).dt.days
+        
+        # Show distribution
+        processing_data = audit_df[audit_df['Processing Days'].notna() & (audit_df['Processing Days'] >= 0)]
+        
+        fig = px.histogram(processing_data, x='Processing Days', nbins=10,
+                          title="Payment Processing Delay (Days from Reported to Deposited)",
+                          color_discrete_sequence=['#FF8C00'],
+                          height=400)
+        fig.update_xaxes(title="Days to Deposit")
+        fig.update_yaxes(title="Number of Payments")
+        st.plotly_chart(fig, width='stretch')
+        
+        if not processing_data.empty:
+            avg_delay = processing_data['Processing Days'].mean()
+            max_delay = processing_data['Processing Days'].max()
+            min_delay = processing_data['Processing Days'].min()
+            
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Avg Processing Time", f"{avg_delay:.1f} days")
+            col2.metric("Longest Delay", f"{max_delay:.0f} days")
+            col3.metric("Fastest Deposit", f"{min_delay:.0f} days")
+    
+    st.divider()
+    
+    # Reconciliation status breakdown
+    st.subheader("✅ Reconciliation Status")
+    
+    if not audit_df.empty and 'Reconciliation Status' in audit_df.columns:
+        status_counts = audit_df['Reconciliation Status'].value_counts()
+        
+        fig = px.pie(
+            values=status_counts.values,
+            names=status_counts.index,
+            title="Payment Reconciliation Status Distribution",
+            color_discrete_map={
+                'BANK_MATCHED': '#2ca02c',
+                'REFUND_TRACKED': '#ff7f0e',
+                'OK': '#1f77b4'
+            }
+        )
+        st.plotly_chart(fig, width='stretch')
+        
+        # Show details
+        st.write("**Status Meanings:**")
+        st.write("- **BANK_MATCHED**: Payment found in bank deposits")
+        st.write("- **REFUND_TRACKED**: Payment includes refund that's accounted for")
+        st.write("- **OK**: Payment recorded but not yet deposited (normal for recent payments)")
 
 # ============================================================================
 # PAGE: DISPUTE FORENSICS
