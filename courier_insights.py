@@ -18,24 +18,115 @@ st.set_page_config(page_title="Courier Insights", layout="wide", initial_sidebar
 
 st.markdown("""
 <style>
+    /* Sidebar Logo */
     .logo-container {
         text-align: center;
-        padding: 10px 0;
+        padding: 8px 0;
         margin-bottom: 20px;
-        border-bottom: 2px solid #FF8C00;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
+    
+    .logo-container img {
+        max-width: 140px;
+        height: auto;
+    }
+    
+    /* Sidebar Metrics - Clean and Minimal */
+    .sidebar-metrics {
+        background: #f8f9fa;
+        padding: 16px;
+        border-radius: 10px;
+        margin-bottom: 24px;
+        border-left: 4px solid #0066cc;
+    }
+    
     .metrics-header {
-        background: linear-gradient(to right, #19376D, #4682B4);
-        padding: 15px;
-        border-radius: 8px;
-        color: white;
-        margin-bottom: 10px;
-        text-align: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        display: block;
     }
+    
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 13px;
+    }
+    
+    .metric-label {
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .metric-value {
+        color: #0066cc;
+        font-weight: 700;
+    }
+    
+    /* Navigation Section */
+    .nav-section {
+        margin-bottom: 8px;
+    }
+    
+    .nav-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 0 8px 0;
+        display: block;
+    }
+    
+    /* Radio button styling */
+    [role="radio"] {
+        background: transparent !important;
+    }
+    
+    .stRadio > label {
+        padding: 8px 12px !important;
+        border-radius: 6px !important;
+        font-size: 14px !important;
+        transition: all 0.2s ease !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .stRadio > label:hover {
+        background: #f0f2f6 !important;
+    }
+    
+    /* Page Title */
     .page-title {
-        color: #19376D;
+        color: #0066cc;
         text-align: center;
         margin-bottom: 10px;
+    }
+    
+    /* Dividers */
+    hr {
+        border: none;
+        height: 1px;
+        background: rgba(0, 0, 0, 0.08);
+        margin: 20px 0;
+    }
+    
+    /* Sidebar header text */
+    .stSidebar h3 {
+        color: #1a1a1a;
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        margin-top: 0;
+    }
+    
+    .stSidebar p {
+        color: #666;
+        font-size: 13px;
+        line-height: 1.5;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -175,28 +266,42 @@ with st.sidebar:
     st.image("JTechLogistics_Logo.svg")
     st.markdown('</div>', unsafe_allow_html=True)
     
-    st.title("🚗 Courier Insights")
-    st.divider()
+    # Key Metrics Panel
+    st.markdown('<span class="metrics-header">Performance Metrics</span>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-metrics">', unsafe_allow_html=True)
     
-    # Persistent metrics header
-    st.markdown('<div class="metrics-header">📊 YOUR NUMBERS</div>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    col1.metric("💰 Earnings", format_money(total_earnings), label_visibility="collapsed")
-    col2.metric("🛣️ Miles", f"{total_miles:,.0f}", label_visibility="collapsed")
+    metrics_html = f"""
+    <div class="metric-row">
+        <span class="metric-label">Total Earnings</span>
+        <span class="metric-value">{format_money(total_earnings)}</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">Total Miles</span>
+        <span class="metric-value">{total_miles:,.0f}</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">$/Mile</span>
+        <span class="metric-value">{format_money(avg_per_mile)}</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">Total Trips</span>
+        <span class="metric-value">{total_trips:,}</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">Refund Rate</span>
+        <span class="metric-value">{format_percent(refund_rate)}</span>
+    </div>
+    <div class="metric-row">
+        <span class="metric-label">Refunds</span>
+        <span class="metric-value">{refund_count}</span>
+    </div>
+    """
+    st.markdown(metrics_html, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    col1.metric("⚡ $/Mile", format_money(avg_per_mile), label_visibility="collapsed")
-    col2.metric("🚚 Trips", f"{total_trips:,}", label_visibility="collapsed")
-    
-    col1, col2 = st.columns(2)
-    col1.metric("🔄 Refund %", format_percent(refund_rate), label_visibility="collapsed")
-    col2.metric("❌ Refunds", f"{refund_count}", label_visibility="collapsed")
-    
-    st.divider()
-    
-    # Navigation
-    st.subheader("Navigation")
-    page = st.radio("Go to:", [
+    # Navigation Section
+    st.markdown('<span class="nav-label">Navigation</span>', unsafe_allow_html=True)
+    page = st.radio("", [
         "🏠 Opportunity Finder",
         "📍 Location Intelligence", 
         "⏰ Schedule Optimizer",
