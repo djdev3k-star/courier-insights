@@ -253,9 +253,11 @@ if page == "🏠 Opportunity Finder":
     
     # OUTLIERS: Worst trips
     st.subheader("🔴 Worst Performing Trips")
-    worst = tx.nsmallest(10, 'Net Earnings')[['Trip drop off time', 'Pickup address', 'Trip distance', 'Net Earnings', 'Refund']]
+    worst = tx.nsmallest(10, 'Net Earnings')[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Refund']]
     worst_display = worst.copy()
     worst_display['Trip drop off time'] = worst_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
+    worst_display['Location'] = worst_display['Restaurant'] + ' (' + worst_display['Pickup City'] + ')'
+    worst_display = worst_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Refund']]
     worst_display['Trip distance'] = worst_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
     worst_display['Net Earnings'] = worst_display['Net Earnings'].apply(format_money)
     worst_display['Refund'] = worst_display['Refund'].apply(lambda x: format_money(x) if x != 0 else "—")
@@ -267,13 +269,14 @@ if page == "🏠 Opportunity Finder":
     
     # OUTLIERS: Best trips
     st.subheader("🟢 Best Performing Trips")
-    best = tx.nlargest(10, 'Net Earnings')[['Trip drop off time', 'Pickup address', 'Drop off address', 'Trip distance', 'Net Earnings', 'Tip']]
+    best = tx.nlargest(10, 'Net Earnings')[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Tip']]
     best_display = best.copy()
     best_display['Trip drop off time'] = best_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
+    best_display['Location'] = best_display['Restaurant'] + ' (' + best_display['Pickup City'] + ')'
+    best_display = best_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Tip']]
     best_display['Trip distance'] = best_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
     best_display['Net Earnings'] = best_display['Net Earnings'].apply(format_money)
     best_display['Tip'] = best_display['Tip'].apply(format_money)
-    best_display = best_display[['Trip drop off time', 'Pickup address', 'Trip distance', 'Net Earnings', 'Tip']]
     
     st.dataframe(best_display, width='stretch', hide_index=True)
     st.caption("Pattern: What made these trips valuable? Location? Time? Distance? Replicate!")
@@ -282,9 +285,11 @@ if page == "🏠 Opportunity Finder":
     
     # Most efficient trips
     st.subheader("⚡ Most Efficient Trips ($/Mile)")
-    efficient = tx.nlargest(10, 'Earnings Per Mile')[['Trip drop off time', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
+    efficient = tx.nlargest(10, 'Earnings Per Mile')[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
     eff_display = efficient.copy()
     eff_display['Trip drop off time'] = eff_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
+    eff_display['Location'] = eff_display['Restaurant'] + ' (' + eff_display['Pickup City'] + ')'
+    eff_display = eff_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
     eff_display['Trip distance'] = eff_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
     eff_display['Net Earnings'] = eff_display['Net Earnings'].apply(format_money)
     eff_display['Earnings Per Mile'] = eff_display['Earnings Per Mile'].apply(format_money)
@@ -620,8 +625,10 @@ elif page == "⚠️ Anomaly Detection":
     st.subheader("Refunded Trips Detail")
     
     if not refunded_trips.empty:
-        ref_display = refunded_trips[['Trip drop off time', 'Pickup address', 'Trip distance', 'Net Earnings', 'Refund']].copy()
+        ref_display = refunded_trips[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Refund']].copy()
         ref_display['Trip drop off time'] = ref_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
+        ref_display['Location'] = ref_display['Restaurant'] + ' (' + ref_display['Pickup City'] + ')'
+        ref_display = ref_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Refund']]
         ref_display['Trip distance'] = ref_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
         ref_display['Net Earnings'] = ref_display['Net Earnings'].apply(format_money)
         ref_display['Refund'] = ref_display['Refund'].apply(format_money)
@@ -643,7 +650,14 @@ elif page == "⚠️ Anomaly Detection":
     col3.metric("Lost Potential", format_money(len(low_pay) * 3.00 - low_pay['Net Earnings'].sum()), help="If they were $3 each")
     
     if not low_pay.empty:
-        st.dataframe(low_pay[['Trip drop off time', 'Trip distance', 'Net Earnings', 'Tip']].head(20), width='stretch', hide_index=True)
+        low_pay_display = low_pay[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Tip']].copy()
+        low_pay_display['Trip drop off time'] = low_pay_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
+        low_pay_display['Location'] = low_pay_display['Restaurant'] + ' (' + low_pay_display['Pickup City'] + ')'
+        low_pay_display = low_pay_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Tip']]
+        low_pay_display['Trip distance'] = low_pay_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
+        low_pay_display['Net Earnings'] = low_pay_display['Net Earnings'].apply(format_money)
+        low_pay_display['Tip'] = low_pay_display['Tip'].apply(format_money)
+        st.dataframe(low_pay_display.head(20), width='stretch', hide_index=True)
     
     st.divider()
     
