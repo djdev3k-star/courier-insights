@@ -172,7 +172,7 @@ high_pay_trips = (tx['Net Earnings'] > 15.00).sum()
 with st.sidebar:
     # Display JTech Logo
     st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-    st.image("JTechLogistics_Logo.svg", use_column_width=True, width=200)
+    st.image("JTechLogistics_Logo.svg", use_column_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.title("🚗 Courier Insights")
@@ -260,7 +260,7 @@ if page == "🏠 Opportunity Finder":
     worst_display['Net Earnings'] = worst_display['Net Earnings'].apply(format_money)
     worst_display['Refund'] = worst_display['Refund'].apply(lambda x: format_money(x) if x != 0 else "—")
     
-    st.dataframe(worst_display, use_container_width=True, hide_index=True)
+    st.dataframe(worst_display, width='stretch', hide_index=True)
     st.caption("Why were these low? Refund? Bad location? Check Dispute Forensics for details.")
     
     st.divider()
@@ -275,7 +275,7 @@ if page == "🏠 Opportunity Finder":
     best_display['Tip'] = best_display['Tip'].apply(format_money)
     best_display = best_display[['Trip drop off time', 'Pickup address', 'Trip distance', 'Net Earnings', 'Tip']]
     
-    st.dataframe(best_display, use_container_width=True, hide_index=True)
+    st.dataframe(best_display, width='stretch', hide_index=True)
     st.caption("Pattern: What made these trips valuable? Location? Time? Distance? Replicate!")
     
     st.divider()
@@ -289,7 +289,7 @@ if page == "🏠 Opportunity Finder":
     eff_display['Net Earnings'] = eff_display['Net Earnings'].apply(format_money)
     eff_display['Earnings Per Mile'] = eff_display['Earnings Per Mile'].apply(format_money)
     
-    st.dataframe(eff_display, use_container_width=True, hide_index=True)
+    st.dataframe(eff_display, width='stretch', hide_index=True)
     st.caption("These trips were quick money. Short distance, good payout = maximize these!")
 
 # ============================================================================
@@ -336,7 +336,7 @@ elif page == "📍 Location Intelligence":
     city_display['Total Tips'] = city_display['Total Tips'].apply(format_money)
     city_display['Avg Distance'] = city_display['Avg Distance'].apply(lambda x: f"{x:.1f}mi")
     
-    st.dataframe(city_display, use_container_width=True)
+    st.dataframe(city_display, width='stretch')
     st.caption("Focus here: High avg earnings + good tip rates = sweet spots")
     
     st.divider()
@@ -360,7 +360,7 @@ elif page == "📍 Location Intelligence":
     rest_display['Total Refunds'] = rest_display['Total Refunds'].apply(format_money)
     rest_display['Trips'] = rest_display['Trips'].astype(int)
     
-    st.dataframe(rest_display, use_container_width=True)
+    st.dataframe(rest_display, width='stretch')
     st.caption("Watch refunds by restaurant - some locations have quality/timing issues")
     
     st.divider()
@@ -381,7 +381,7 @@ elif page == "📍 Location Intelligence":
     zip_display['Avg Tip'] = zip_display['Avg Tip'].apply(format_money)
     zip_display['Trip Count'] = zip_display['Trip Count'].astype(int)
     
-    st.dataframe(zip_display, use_container_width=True)
+    st.dataframe(zip_display, width='stretch')
     
     st.divider()
     
@@ -406,7 +406,7 @@ elif page == "📍 Location Intelligence":
     detail_display['Total Refunds'] = detail_display['Total Refunds'].apply(format_money)
     detail_display['Trips'] = detail_display['Trips'].astype(int)
     
-    st.dataframe(detail_display, use_container_width=True, hide_index=True)
+    st.dataframe(detail_display, width='stretch', hide_index=True)
     
     st.divider()
     
@@ -420,7 +420,7 @@ elif page == "📍 Location Intelligence":
                 title="Earnings Range by Top Cities",
                 color='Pickup City',
                 height=400)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     st.divider()
     
@@ -435,7 +435,7 @@ elif page == "📍 Location Intelligence":
                 color='Restaurant',
                 height=400)
     fig.update_xaxes(tickangle=-45)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 # ============================================================================
 # PAGE: SCHEDULE OPTIMIZER
@@ -480,7 +480,7 @@ elif page == "⏰ Schedule Optimizer":
         hovermode='x unified',
         height=400
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     st.divider()
     
@@ -499,7 +499,7 @@ elif page == "⏰ Schedule Optimizer":
                 color_continuous_scale='Greens',
                 height=400)
     fig.update_xaxes(categoryorder="array", categoryarray=dow_order)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     st.divider()
     
@@ -558,7 +558,7 @@ elif page == "🛣️ Mileage Efficiency":
         height=400,
         hovermode='x unified'
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     st.divider()
     
@@ -571,7 +571,7 @@ elif page == "🛣️ Mileage Efficiency":
                       height=400)
     fig.update_xaxes(title="Trip Distance (miles)")
     fig.update_yaxes(title="Number of Trips")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     st.divider()
     
@@ -626,7 +626,7 @@ elif page == "⚠️ Anomaly Detection":
         ref_display['Net Earnings'] = ref_display['Net Earnings'].apply(format_money)
         ref_display['Refund'] = ref_display['Refund'].apply(format_money)
         
-        st.dataframe(ref_display, use_container_width=True, hide_index=True)
+        st.dataframe(ref_display, width='stretch', hide_index=True)
     else:
         st.success("No refunds found!")
     
@@ -643,7 +643,7 @@ elif page == "⚠️ Anomaly Detection":
     col3.metric("Lost Potential", format_money(len(low_pay) * 3.00 - low_pay['Net Earnings'].sum()), help="If they were $3 each")
     
     if not low_pay.empty:
-        st.dataframe(low_pay[['Trip drop off time', 'Trip distance', 'Net Earnings', 'Tip']].head(20), use_container_width=True, hide_index=True)
+        st.dataframe(low_pay[['Trip drop off time', 'Trip distance', 'Net Earnings', 'Tip']].head(20), width='stretch', hide_index=True)
     
     st.divider()
     
@@ -745,7 +745,7 @@ elif page == "🔍 Dispute Forensics":
         display_df = display_df[['Trip UUID', 'Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 
                                'Fare', 'Tip', 'Incentive', 'Boost', 'Refund', 'Net Earnings']]
         
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        st.dataframe(display_df, width='stretch', hide_index=True)
         
         st.caption("📌 Copy the Trip UUID and paste it when contacting Uber support")
         
@@ -769,7 +769,7 @@ elif page == "🔍 Dispute Forensics":
                 names=list(issue_counts.keys()),
                 title="Issue Distribution"
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         
         st.divider()
         
@@ -865,7 +865,7 @@ elif page == "📊 Trends & Forecast":
         hovermode='x unified',
         height=400
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     st.divider()
     
