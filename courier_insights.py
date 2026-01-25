@@ -721,15 +721,16 @@ if page == "Overview":
       hover_name='Pickup City',
       hover_data={
         'Net Earnings': ':$,.0f',
-        'Tip Rate %': ':.1f',
+        'Tip Rate %': ':.1f%',
         'Trip Count': True,
         'lat': False,
         'lon': False
       },
       color_continuous_scale='RdYlGn',
-      size_max=30,
-      mapbox_style='streets',
-      height=500
+      size_max=40,
+      mapbox_style='carto-positron',
+      height=500,
+      title='Sweet Spot Cities (Tip Rate colored, Size = Earnings)'
     )
     # Auto-zoom to fit data bounds
     lat_range = city_stats_filtered['lat'].max() - city_stats_filtered['lat'].min()
@@ -749,9 +750,11 @@ if page == "Overview":
     else:
       zoom_level = 9
     fig_cities.update_layout(
-      margin=dict(l=0, r=0, t=0, b=0),
+      margin=dict(l=0, r=0, t=40, b=0),
       mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom_level),
-      height=500
+      height=550,
+      font=dict(size=12),
+      hovermode='closest'
     )
     st.plotly_chart(fig_cities, use_container_width=True, key="cities_map")
   
@@ -1021,10 +1024,11 @@ elif page == "Locations":
           'lat': False,
           'lon': False
         },
-        color_continuous_scale='RdYlGn',
+        color_continuous_scale='Viridis',
         size_max=60,
         height=500,
-        mapbox_style='streets'
+        mapbox_style='carto-positron',
+        title='Sweet Spot Quality Score (Color = Quality, Size = Total Earnings)'
       )
       
       # Add annotations for top 3 sweet spots
@@ -1086,10 +1090,11 @@ elif page == "Locations":
         lat='lat',
         lon='lon',
         z='earnings',
-        radius=25,
-        mapbox_style='streets',
+        radius=30,
+        mapbox_style='carto-positron',
         height=500,
-        color_continuous_scale=['#6ba3d0', '#1e5a96', '#1a3a52']
+        color_continuous_scale='Turbo',
+        title='Earnings Density Heatmap (Intensity = Avg Earnings per Trip)'
       )
       # Auto-zoom
       center_lat = 32.9
@@ -1112,7 +1117,12 @@ elif page == "Locations":
           zoom = 9
       else:
         zoom = 9
-      fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom))
+      fig.update_layout(
+        margin=dict(l=0, r=0, t=40, b=0),
+        mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom),
+        height=550,
+        hovermode='closest'
+      )
       st.plotly_chart(fig, use_container_width=True)
       
       # Stats table
@@ -1172,10 +1182,11 @@ elif page == "Locations":
         size='Earnings',
         hover_name='Restaurant',
         hover_data={'City': True, 'Earnings': ':$.2f', 'lat': False, 'lon': False},
-        color_continuous_scale=['#6ba3d0', '#1e5a96', '#1a3a52'],
-        size_max=15,
+        color_continuous_scale='Plasma',
+        size_max=20,
         height=500,
-        mapbox_style='streets'
+        mapbox_style='carto-positron',
+        title='Individual Trips (Color & Size = Earnings)'
       )
       # Auto-zoom
       if len(trip_df) > 0:
@@ -1486,15 +1497,18 @@ elif page == "Routes":
       pickup_data,
       lat='lat',
       lon='lon',
-      mapbox_style='streets',
+      mapbox_style='carto-positron',
       height=500,
-      color_continuous_scale='Viridis',
-      radius=40,
-      zoom=9
+      color_continuous_scale='Blues',
+      radius=35,
+      zoom=9,
+      title='Pickup Location Density (Concentration of trips)'
     )
     fig_pickup.update_layout(
-      margin=dict(l=0, r=0, t=0, b=0),
-      mapbox=dict(center=dict(lat=32.85, lon=-96.85), zoom=9)
+      margin=dict(l=0, r=0, t=40, b=0),
+      mapbox=dict(center=dict(lat=32.85, lon=-96.85), zoom=9),
+      height=550,
+      hovermode='closest'
     )
     st.plotly_chart(fig_pickup, use_container_width=True, key="pickup_heatmap")
   else:
@@ -1550,9 +1564,10 @@ elif page == "Routes":
             'lon': False
           },
           color_continuous_scale='RdYlGn',
-          size_max=30,
-          mapbox_style='streets',
-          height=500
+          size_max=35,
+          mapbox_style='carto-positron',
+          height=500,
+          title='Top Street-Level Earning Zones (Green = Best Efficiency)'
         )
         
         # Auto-zoom
@@ -1580,9 +1595,10 @@ elif page == "Routes":
           zoom_level = 9
         
         fig_pickup_zones.update_layout(
-          margin=dict(l=0, r=0, t=0, b=0),
+          margin=dict(l=0, r=0, t=40, b=0),
           mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom_level),
-          height=500
+          height=550,
+          hovermode='closest'
         )
         st.plotly_chart(fig_pickup_zones, use_container_width=True, key="pickup_zones_map")
       else:
