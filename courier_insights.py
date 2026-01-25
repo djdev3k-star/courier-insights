@@ -505,10 +505,10 @@ with st.sidebar:
   page = st.session_state.current_page
 
 # ============================================================================
-# PAGE: OPPORTUNITY FINDER (Home)
+# PAGE: OVERVIEW (Home)
 # ============================================================================
 
-if page == "Opportunity Finder":
+if page == "Overview":
   st.title("Opportunity Finder")
   st.write("Outliers, alerts, and opportunities to optimize your earnings")
   
@@ -599,7 +599,7 @@ if page == "Opportunity Finder":
 # PAGE: LOCATION INTELLIGENCE
 # ============================================================================
 
-elif page == "Location Intelligence":
+elif page == "Locations":
   st.title("Location Intelligence")
   st.write("Which cities, restaurants, and areas pay best?")
   
@@ -744,7 +744,7 @@ elif page == "Location Intelligence":
 # PAGE: SCHEDULE OPTIMIZER
 # ============================================================================
 
-elif page == "Schedule Optimizer":
+elif page == "Schedule":
   st.title("Schedule Optimizer")
   st.write("Best times to work: hours and days that pay the most")
   
@@ -818,8 +818,173 @@ elif page == "Schedule Optimizer":
 # ============================================================================
 # PAGE: MILEAGE EFFICIENCY
 # ============================================================================
+elif page == "Issues":
+  st.title("Issue Tracker")
+  st.write("Efficiency analysis, refunds, disputes, and anomalies")
+  
+  st.divider()
+  
+  # Tab selection
+  issue_tab = st.radio(
+    "Issue Category",
+    ["⚡ Efficiency", "🔔 Refunds & Disputes", "🚨 Anomalies"],
+    horizontal=True
+  )
+  
+  st.divider()
+  
+  if issue_tab == "⚡ Efficiency":
+    st.subheader("Mileage Efficiency Analysis")
+  
+    # Efficiency metrics
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Miles", f"{total_miles:,.0f}")
+    col2.metric("Total Earnings", format_money(total_earnings))
+    col3.metric("$/Mile (Overall)", format_money(avg_per_mile))
+    col4.metric("Efficiency Score", f"{(avg_per_mile * 10):.1f}/10", help="$/Mile normalized to 10")
+    
+    st.divider()
+    
+    # Most efficient trips
+    st.subheader(" Most Efficient Trips ($/Mile)")
+    efficient = tx.nlargest(10, 'Earnings Per Mile')[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
+    eff_display = efficient.copy()
+    eff_display['Trip drop off time'] = eff_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
+    eff_display['Location'] = eff_display['Restaurant'] + ' (' + eff_display['Pickup City'] + ')'
+    eff_display = eff_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
+    eff_display['Trip distance'] = eff_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
+    eff_display['Net Earnings'] = eff_display['Net Earnings'].apply(format_money)
+    eff_display['Earnings Per Mile'] = eff_display['Earnings Per Mile'].apply(format_money)
+    
+    st.dataframe(eff_display, width='stretch', hide_index=True)
+    st.caption("These trips were quick money. Short distance, good payout = maximize these!")
+  
+  elif issue_tab == "🔔 Refunds & Disputes":
+    st.subheader("Refunds & Dispute Forensics")
+    
+    # Refund summary
+    refunded_trips = tx[tx['Refund'] != 0]
+    
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Refunded Trips", len(refunded_trips))
+    col2.metric("Refund Rate", format_percent(refund_rate))
+    col3.metric("Total Refunded", format_money(tx['Refund'].sum()))
+    
+    st.divider()
+    
+    # Refunded trips detail
+    if not refunded_trips.empty:
+      ref_display = refunded_trips[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Refund']].copy()
+      ref_display['Trip drop off time'] = ref_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
+      ref_display['Location'] = ref_display['Restaurant'] + ' (' + ref_display['Pickup City'] + ')'
+      ref_display = ref_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Refund']]
+      ref_display['Trip distance'] = ref_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
+      ref_display['Net Earnings'] = ref_display['Net Earnings'].apply(format_money)
+      ref_display['Refund'] = ref_display['Refund'].apply(format_money)
+      
+      st.dataframe(ref_display, width='stretch', hide_index=True)
+    else:
+      st.success("No refunds found!")
+  
+  elif issue_tab == "🚨 Anomalies":
+    st.subheader("Payment Anomalies")
+    
+    # Low pay anomalies
+    low_pay = tx[tx['Net Earnings'] < 2.50]
+    
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Trips <$2.50", len(low_pay))
+    col2.metric("Total Low Pay", format_money(low_pay['Net Earnings'].sum()))
+    col3.metric("Lost Potential", format_money(len(low_pay) * 3.00 - low_pay['Net Earnings'].sum()), help="If they were $3 each")
+    
+    st.divider()
+    
+    if not low_pay.empty:
+      low_pay_display = low_pay[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Tip']].copy()
+      low_pay_display['Trip drop off time'] = low_pay_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
+      low_pay_display['Location'] = low_pay_display['Restaurant'] + ' (' + low_pay_display['Pickup City'] + ')'
+      low_pay_display = low_pay_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Tip']]
+      low_pay_display['Trip distance'] = low_pay_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
+      low_pay_display['Net Earnings'] = low_pay_display['Net Earnings'].apply(format_money)
+      low_pay_display['Tip'] = low_pay_display['Tip'].apply(format_money)
+      st.dataframe(low_pay_display.head(20), width='stretch', hide_index=True)
+
+# ============================================================================
+# PAGE: ROUTE OPTIMIZER
+# ============================================================================
+
+elif page == "Routes":
+  st.title("Route Optimizer")
+  st.write("Find the best areas to work based on time, earnings, and demand patterns")
+  
+  st.divider()
+  
+  st.subheader("🗺️ Top Cities by Earnings")
+  
+  city_stats = tx.groupby('Pickup City').agg({
+    'Net Earnings': ['sum', 'mean', 'count']
+  }).round(2)
+  city_stats.columns = ['Total', 'Avg Earnings', 'Trip Count']
+  city_stats = city_stats[city_stats['Trip Count'] >= 5].sort_values('Avg Earnings', ascending=False).head(10)
+  
+  city_display = city_stats.copy()
+  city_display['Total'] = city_display['Total'].apply(format_money)
+  city_display['Avg Earnings'] = city_display['Avg Earnings'].apply(format_money)
+  
+  st.dataframe(city_display, width='stretch')
+  st.caption("Focus on cities with high average earnings")
+  
+  st.divider()
+  
+  st.subheader("🍔 Top Restaurants")
+  
+  restaurant_stats = tx.groupby('Restaurant').agg({
+    'Net Earnings': ['sum', 'mean', 'count']
+  }).round(2)
+  restaurant_stats.columns = ['Total $', 'Avg Per Trip', 'Trips']
+  restaurant_stats = restaurant_stats[restaurant_stats['Trips'] >= 3].sort_values('Avg Per Trip', ascending=False).head(10)
+  
+  rest_display = restaurant_stats.copy()
+  rest_display['Total $'] = rest_display['Total $'].apply(format_money)
+  rest_display['Avg Per Trip'] = rest_display['Avg Per Trip'].apply(format_money)
+  rest_display['Trips'] = rest_display['Trips'].astype(int)
+  
+  st.dataframe(rest_display, width='stretch')
+  st.caption("These restaurants consistently provide good payouts")
+
+# ============================================================================
+# PAGE: ANOMALY DETECTION (REMOVED - CONSOLIDATED INTO ISSUES)
+# ============================================================================
+
+elif page == "Anomaly Detection":
+  # Redirect to Issues page
+  st.warning("This page has been consolidated into the Issues page. Redirecting...")
+  st.session_state.current_page = "Issues"
+  st.rerun()
+
+# ============================================================================
+# PAGE: DISPUTE FORENSICS (REMOVED - CONSOLIDATED INTO ISSUES)
+# ============================================================================
+
+elif page == "Dispute Forensics":
+  # Redirect to Issues page
+  st.warning("This page has been consolidated into the Issues page. Redirecting...")
+  st.session_state.current_page = "Issues"
+  st.rerun()
+
+# ============================================================================
+# PAGE: MILEAGE EFFICIENCY (REMOVED - CONSOLIDATED INTO ISSUES)
+# ============================================================================
 
 elif page == "Mileage Efficiency":
+  # Redirect to Issues page
+  st.warning("This page has been consolidated into the Issues page. Redirecting...")
+  st.session_state.current_page = "Issues"
+  st.rerun()
+
+# ============================================================================
+# PAGE: PAYMENT RECONCILIATION
+# ============================================================================
   st.title("Mileage Efficiency")
   st.write("Minimize driving, maximize earnings. Track your efficiency.")
   
@@ -980,7 +1145,7 @@ elif page == "Anomaly Detection":
 # PAGE: PAYMENT RECONCILIATION
 # ============================================================================
 
-elif page == "Payment Reconciliation":
+elif page == "Payments":
   st.title("Payment Reconciliation")
   st.write("Compare Uber payments reported to bank deposits • Track payment processing timeline")
   
@@ -1263,7 +1428,7 @@ Trips with No Tips: {len(filtered[filtered['Tip'] == 0])}
 # PAGE: TRENDS & FORECAST
 # ============================================================================
 
-elif page == "Trends & Forecast":
+elif page == "Trends":
   st.title("Trends & Forecast")
   st.write("Long-term patterns, seasonality, and what's changing")
   
