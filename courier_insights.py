@@ -12,6 +12,9 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Courier Insights", layout="wide", initial_sidebar_state="expanded")
 
+# Mapbox configuration
+px.set_mapbox_access_token('pk.eyJ1IjoibXBieDE1IiwiYSI6ImNta2Y1a3dxZzAzZ3AzZ29qNXQ1bmpiaGsifQ.tCkudl7SJNzzHCARPEzC9w')
+
 # ============================================================================
 # CUSTOM STYLING
 # ============================================================================
@@ -438,31 +441,30 @@ with st.sidebar:
   
   # Create columns for navigation buttons
   nav_items = [
-    "Opportunity Finder",
-    "Location Intelligence", 
-    "Schedule Optimizer",
-    "Mileage Efficiency",
-    "Anomaly Detection",
-    "Payment Reconciliation",
-    "Dispute Forensics",
-    "Trends & Forecast"
+    ("🏠 Overview", "Overview"),
+    ("🗺️ Routes", "Routes"),
+    ("📍 Locations", "Locations"),
+    ("📅 Schedule", "Schedule"),
+    ("💰 Payments", "Payments"),
+    ("⚠️ Issues", "Issues"),
+    ("📈 Trends", "Trends")
   ]
   
   # Create a session state variable to track the selected page
   if 'current_page' not in st.session_state:
-    st.session_state.current_page = nav_items[0]
+    st.session_state.current_page = "Overview"
   
   # Create button columns for better organization
   col1, col2 = st.columns(2)
   
-  for i, item in enumerate(nav_items):
+  for i, (label, page) in enumerate(nav_items):
     if i % 2 == 0:
-      if col1.button(item, key=f"nav_{item}", use_container_width=True):
-        st.session_state.current_page = item
+      if col1.button(label, key=f"nav_{page}", use_container_width=True):
+        st.session_state.current_page = page
         st.rerun()
     else:
-      if col2.button(item, key=f"nav_{item}", use_container_width=True):
-        st.session_state.current_page = item
+      if col2.button(label, key=f"nav_{page}", use_container_width=True):
+        st.session_state.current_page = page
         st.rerun()
   
   st.markdown('<div style="margin: 16px 0;"></div>', unsafe_allow_html=True)
