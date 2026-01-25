@@ -485,6 +485,10 @@ def load_data():
   transactions['Pickup Area'] = transactions['Pickup City'] + ' ' + transactions['Pickup Zip']
   transactions['Dropoff Area'] = transactions['Dropoff City'] + ' ' + transactions['Dropoff Zip']
   
+  # Normalize city names (fix case inconsistencies like "DALLAS" vs "Dallas")
+  transactions['Pickup City'] = transactions['Pickup City'].str.title()
+  transactions['Dropoff City'] = transactions['Dropoff City'].str.title()
+  
   return {
     'transactions': transactions,
     'audit': audit,
