@@ -558,6 +558,29 @@ tx = data['transactions']
 audit_df = data['audit']
 refunds_df = data['refunds']
 multi_df = data['multi_account']
+daily_df = data['daily']
+
+# Pre-load geocoded addresses on startup (non-blocking)
+@st.cache_data
+def preload_geocodes():
+  """Pre-geocode all addresses on app startup so they're ready to use (non-blocking)"""
+  try:
+    if tx is not None and 'Pickup address' in tx.columns:
+      unique_addresses = tuple(tx[tx['Pickup address'].notna()]['Pickup address'].unique().tolist())
+      if unique_addresses:
+        # Run geocoding in background (uses cache so won't re-run)
+        get_coordinates_for_addresses(unique_addresses)
+        return True
+  except Exception as e:
+    # Silently fail - geocoding will happen on-demand when user navigates
+    pass
+  return False
+
+# Attempt pre-load (non-blocking, fails gracefully)
+try:
+  preload_geocodes()
+except Exception:
+  pass  # Navigation not blocked if pre-load fails
 
 # ============================================================================
 # CALCULATE KEY METRICS
@@ -1468,8 +1491,17 @@ elif page == "Routes":
     # Get unique addresses to geocode
     unique_addresses = tuple(pickup_with_address['Pickup address'].unique().tolist())
     
-    with st.spinner(f"🔄 Geocoding {len(unique_addresses)} addresses... (this may take a moment)"):
+    # Check if already cached (pre-load may have run)
+    geocoded_cache = load_geocoded_addresses()
+    already_cached = len(geocoded_cache) > 0
+    
+    if already_cached:
+      # Addresses were pre-loaded, fetch without spinner
       coords_dict = get_coordinates_for_addresses(unique_addresses)
+    else:
+      # Addresses not pre-loaded, show spinner for on-demand load
+      with st.spinner(f"🔄 Loading location data... (first load)"):
+        coords_dict = get_coordinates_for_addresses(unique_addresses)
     
     # Add coordinates to data
     pickup_with_address['lat'] = pickup_with_address['Pickup address'].map(lambda x: coords_dict.get(x, (None, None))[0])
