@@ -172,7 +172,7 @@ high_pay_trips = (tx['Net Earnings'] > 15.00).sum()
 with st.sidebar:
     # Display JTech Logo
     st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-    st.image("JTechLogistics_Logo.svg", use_column_width=True)
+    st.image("JTechLogistics_Logo.svg")
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.title("🚗 Courier Insights")
@@ -692,39 +692,47 @@ elif page == "💰 Payment Reconciliation":
     # Summary metrics
     st.subheader("📊 Payment Summary")
     
-    if not audit_df.empty and 'vs reporting' in audit_df.columns:
+    if not audit_df.empty:
         # Parse payment dates
-        audit_df['Payment Date'] = pd.to_datetime(audit_df['vs reporting'], errors='coerce')
+        audit_df['Payment Date'] = pd.to_datetime(audit_df['Payment Date'], errors='coerce')
         if 'Bank Deposit Date' in audit_df.columns:
             audit_df['Bank Deposit Date'] = pd.to_datetime(audit_df['Bank Deposit Date'], errors='coerce')
         
-        total_payments = audit_df['Net Earnings'].sum() if 'Net Earnings' in audit_df.columns else 0
-        total_deposits = audit_df[audit_df['Reconciliation Status'] == 'BANK_MATCHED']['Net Earnings'].sum() if 'Reconciliation Status' in audit_df.columns else 0
+        total_payments = audit_df['Payment Net Earnings'].sum() if 'Payment Net Earnings' in audit_df.columns else 0
         
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Uber Reported", format_money(total_payments))
-        col2.metric("Bank Deposits", format_money(total_deposits))
-        col3.metric("Gap", format_money(total_payments - total_deposits))
-        col4.metric("Match Rate", format_percent((total_deposits / total_payments * 100) if total_payments > 0 else 0))
+        
+        # Count matched deposits
+        matched = len(audit_df[audit_df['Bank Deposit Date'].notna()]) if 'Bank Deposit Date' in audit_df.columns else 0
+        col2.metric("Deposits Matched", f"{matched}/{len(audit_df)}")
+        
+        # Reconciliation statuses
+        if 'Reconciliation Status' in audit_df.columns:
+            status_counts = audit_df['Reconciliation Status'].value_counts()
+            col3.metric("Bank Matched", status_counts.get('BANK_MATCHED', 0))
+            col4.metric("Refund Tracked", status_counts.get('REFUND_TRACKED', 0))
     
     st.divider()
     
     # Daily breakdown
-    st.subheader("📅 Daily Payment vs Bank Timeline")
+    st.subheader("📅 Daily Payment Timeline")
     
-    if not audit_df.empty:
+    if not audit_df.empty and 'Payment Date' in audit_df.columns:
         # Group by payment date to see daily totals
         daily_payment = audit_df.groupby(audit_df['Payment Date'].dt.date).agg({
-            'Net Earnings': 'sum'
+            'Payment Net Earnings': 'sum'
         }).reset_index()
         daily_payment.columns = ['Date', 'Payments Reported']
+        daily_payment['Date'] = daily_payment['Date'].astype(str)
         
-        # Group by deposit date to see daily deposits
+        # Group by deposit date if available
         if 'Bank Deposit Date' in audit_df.columns:
             daily_deposit = audit_df.dropna(subset=['Bank Deposit Date']).groupby(audit_df['Bank Deposit Date'].dt.date).agg({
-                'Net Earnings': 'sum'
+                'Payment Net Earnings': 'sum'
             }).reset_index()
             daily_deposit.columns = ['Date', 'Bank Deposited']
+            daily_deposit['Date'] = daily_deposit['Date'].astype(str)
             
             # Merge to compare side-by-side
             daily_comparison = daily_payment.merge(daily_deposit, on='Date', how='outer').fillna(0)
@@ -735,32 +743,33 @@ elif page == "💰 Payment Reconciliation":
             display_comparison['Payments Reported'] = display_comparison['Payments Reported'].apply(format_money)
             display_comparison['Bank Deposited'] = display_comparison['Bank Deposited'].apply(format_money)
             display_comparison['Gap'] = display_comparison['Gap'].apply(format_money)
-            display_comparison['Date'] = display_comparison['Date'].astype(str)
             
             st.dataframe(display_comparison, width='stretch', hide_index=True)
-            st.caption("Shows daily breakdown: When Uber reported payments vs when they actually hit your bank account")
+            st.caption("Daily breakdown: When Uber reported payments vs when they hit your bank")
+        else:
+            st.dataframe(daily_payment, width='stretch', hide_index=True)
     
     st.divider()
     
-    # Timeline visualization
-    st.subheader("📈 Payment Processing Timeline")
+    # Processing delay analysis
+    st.subheader("⏱️ Payment Processing Delay")
     
     if not audit_df.empty and 'Payment Date' in audit_df.columns and 'Bank Deposit Date' in audit_df.columns:
         # Calculate processing delay (days between payment and deposit)
         audit_df['Processing Days'] = (audit_df['Bank Deposit Date'] - audit_df['Payment Date']).dt.days
         
         # Show distribution
-        processing_data = audit_df[audit_df['Processing Days'].notna() & (audit_df['Processing Days'] >= 0)]
-        
-        fig = px.histogram(processing_data, x='Processing Days', nbins=10,
-                          title="Payment Processing Delay (Days from Reported to Deposited)",
-                          color_discrete_sequence=['#FF8C00'],
-                          height=400)
-        fig.update_xaxes(title="Days to Deposit")
-        fig.update_yaxes(title="Number of Payments")
-        st.plotly_chart(fig, width='stretch')
+        processing_data = audit_df[(audit_df['Processing Days'].notna()) & (audit_df['Processing Days'] >= 0) & (audit_df['Processing Days'] <= 30)]
         
         if not processing_data.empty:
+            fig = px.histogram(processing_data, x='Processing Days', nbins=10,
+                              title="Payment Processing Delay (Days from Reported to Deposited)",
+                              color_discrete_sequence=['#FF8C00'],
+                              height=400)
+            fig.update_xaxes(title="Days to Deposit")
+            fig.update_yaxes(title="Number of Payments")
+            st.plotly_chart(fig, width='stretch')
+            
             avg_delay = processing_data['Processing Days'].mean()
             max_delay = processing_data['Processing Days'].max()
             min_delay = processing_data['Processing Days'].min()
@@ -790,11 +799,10 @@ elif page == "💰 Payment Reconciliation":
         )
         st.plotly_chart(fig, width='stretch')
         
-        # Show details
         st.write("**Status Meanings:**")
-        st.write("- **BANK_MATCHED**: Payment found in bank deposits")
-        st.write("- **REFUND_TRACKED**: Payment includes refund that's accounted for")
-        st.write("- **OK**: Payment recorded but not yet deposited (normal for recent payments)")
+        st.write("- **BANK_MATCHED**: Payment found in bank deposits ✅")
+        st.write("- **REFUND_TRACKED**: Payment includes a refund 🔄")
+        st.write("- **OK**: Payment recorded but not yet deposited ⏳")
 
 # ============================================================================
 # PAGE: DISPUTE FORENSICS
