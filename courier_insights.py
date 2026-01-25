@@ -883,6 +883,52 @@ elif page == "Locations":
   
   st.divider()
   
+  # SWEET SPOTS SECTION
+  st.subheader("🎯 Your Sweet Spots (Best Pay + Volume)")
+  
+  # Calculate location quality scores
+  total_trips = len(tx)
+  city_quality = tx.groupby('Pickup City').agg({
+    'Net Earnings': ['sum', 'mean', 'count'],
+    'Tip': 'mean'
+  }).reset_index()
+  city_quality.columns = ['City', 'Total Earnings', 'Avg Earnings', 'Trip Count', 'Avg Tip']
+  city_quality['Location Quality'] = city_quality['Avg Earnings'] * (city_quality['Trip Count'] / total_trips)
+  city_quality = city_quality.sort_values('Location Quality', ascending=False)
+  
+  # Display top 5 sweet spots
+  col1, col2, col3, col4, col5 = st.columns(5)
+  
+  for idx, (_, row) in enumerate(city_quality.head(5).iterrows()):
+    with [col1, col2, col3, col4, col5][idx]:
+      quality_score = row['Location Quality']
+      st.metric(
+        row['City'],
+        f"{quality_score:.2f}",
+        f"${row['Avg Earnings']:.2f}/trip • {int(row['Trip Count'])} trips"
+      )
+  
+  # Detailed sweet spots table
+  st.markdown("**Top Sweet Spots by Quality Score:**")
+  sweet_spots_display = city_quality.head(8).copy()
+  sweet_spots_display['Total Earnings'] = sweet_spots_display['Total Earnings'].apply(format_money)
+  sweet_spots_display['Avg Earnings'] = sweet_spots_display['Avg Earnings'].apply(format_money)
+  sweet_spots_display['Avg Tip'] = sweet_spots_display['Avg Tip'].apply(format_money)
+  sweet_spots_display['Location Quality'] = sweet_spots_display['Location Quality'].round(3)
+  sweet_spots_display['Trip Count'] = sweet_spots_display['Trip Count'].astype(int)
+  sweet_spots_display = sweet_spots_display[['City', 'Location Quality', 'Avg Earnings', 'Trip Count', 'Avg Tip', 'Total Earnings']]
+  
+  st.dataframe(sweet_spots_display, use_container_width=True, hide_index=True)
+  
+  st.info("""
+  💡 **How to use Sweet Spots:**
+  - **Higher Quality Score** = Better combination of pay + frequency
+  - **Focus your efforts** on these cities - they offer best ROI
+  - **During peak hours**, these areas will be most productive
+  """)
+  
+  st.divider()
+  
   # City coordinates
   city_coords = {
     'Dallas': (32.7767, -96.7970),
@@ -912,12 +958,16 @@ elif page == "Locations":
   )
   
   if map_view == "City Aggregation":
-    # Aggregate by city
+    # Aggregate by city with quality scores
     city_agg = tx.groupby('Pickup City').agg({
-      'Net Earnings': 'sum',
-      'Trip UUID': 'count'
+      'Net Earnings': ['sum', 'mean', 'count'],
+      'Tip': 'mean'
     }).reset_index()
-    city_agg.columns = ['City', 'Total Earnings', 'Trip Count']
+    city_agg.columns = ['City', 'Total Earnings', 'Avg Earnings', 'Trip Count', 'Avg Tip']
+    
+    # Calculate location quality score
+    city_agg['Location Quality'] = city_agg['Avg Earnings'] * (city_agg['Trip Count'] / total_trips)
+    city_agg['Quality Rank'] = city_agg['Location Quality'].rank(ascending=False)
     
     # Add coordinates
     map_data = []
@@ -927,25 +977,57 @@ elif page == "Locations":
           'City': row['City'],
           'lat': city_coords[row['City']][0],
           'lon': city_coords[row['City']][1],
-          'Earnings': row['Total Earnings'],
-          'Trips': row['Trip Count']
+          'Total Earnings': row['Total Earnings'],
+          'Avg Earnings': row['Avg Earnings'],
+          'Trips': row['Trip Count'],
+          'Location Quality': row['Location Quality'],
+          'Quality Rank': int(row['Quality Rank'])
         })
     
     if map_data:
       map_df = pd.DataFrame(map_data)
+      
+      # Color by quality rank (top spots highlighted)
       fig = px.scatter_mapbox(
         map_df,
         lat='lat',
         lon='lon',
-        size='Earnings',
-        color='Earnings',
+        size='Total Earnings',
+        color='Location Quality',
         hover_name='City',
-        hover_data={'Earnings': ':$.2f', 'Trips': True, 'lat': False, 'lon': False},
-        color_continuous_scale=['#6ba3d0', '#1e5a96', '#1a3a52'],
-        size_max=50,
+        hover_data={
+          'Total Earnings': ':$,.0f',
+          'Avg Earnings': ':$,.2f',
+          'Trips': True,
+          'Location Quality': ':.3f',
+          'Quality Rank': True,
+          'lat': False,
+          'lon': False
+        },
+        color_continuous_scale='RdYlGn',
+        size_max=60,
         height=500,
         mapbox_style='streets'
       )
+      
+      # Add annotations for top 3 sweet spots
+      top_3 = map_df.nsmallest(3, 'Quality Rank')
+      for _, row in top_3.iterrows():
+        rank = int(row['Quality Rank'])
+        fig.add_annotation(
+          x=row['lon'], y=row['lat'],
+          text=f"#{rank}",
+          showarrow=True,
+          arrowsize=1,
+          arrowwidth=2,
+          arrowcolor='#1e5a96',
+          ax=30, ay=-30,
+          bgcolor='#1e5a96',
+          font=dict(color='white', size=12),
+          bordercolor='#1e5a96',
+          borderwidth=2
+        )
+      
       # Auto-zoom to fit data
       if len(map_df) > 0:
         lat_range = map_df['lat'].max() - map_df['lat'].min()
