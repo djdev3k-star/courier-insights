@@ -45,7 +45,7 @@ st.markdown("""
   }
   
   .logo-container img {
-    max-width: 140px;
+    max-width: 200px;
     height: auto;
   }
   
@@ -100,27 +100,60 @@ st.markdown("""
     display: block;
   }
   
-  /* Radio button styling */
-  [role="radio"] {
+  /* Modern Navigation Buttons */
+  .stButton {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .stButton > button {
+    background-color: transparent !important;
     background: transparent !important;
-  }
-  
-  .stRadio > label {
-    padding: 9px 12px !important;
-    border-radius: 6px !important;
-    font-size: 13px !important;
-    transition: all 0.2s ease !important;
-    margin-bottom: 5px !important;
     color: #000000 !important;
-    border-left: 3px solid transparent !important;
-    padding-left: 15px !important;
-    font-weight: 500;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    border-radius: 0px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: 8px 0px !important;
+    transition: all 0.2s ease !important;
+    text-align: left !important;
+    width: 100% !important;
+    position: relative;
+    box-shadow: none !important;
   }
   
-  .stRadio > label:hover {
-    background: #e8f1f7 !important;
-    border-left-color: #1e5a96 !important;
+  .stButton > button:hover {
+    background-color: transparent !important;
+    background: transparent !important;
+    border-bottom-color: #1e5a96 !important;
     color: #1a3a52 !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+  }
+  
+  .stButton > button:focus {
+    background-color: transparent !important;
+    background: transparent !important;
+    border-bottom-color: #1e5a96 !important;
+    color: #1a3a52 !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+  }
+  
+  .stButton > button:active {
+    background-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  
+  /* Hide radio buttons (no longer used) */
+  [role="radio"] {
+    display: none !important;
+  }
+  
+  .stRadio {
+    display: none !important;
   }
   
   /* Page Title */
@@ -226,6 +259,41 @@ st.markdown("""
   /* Text styling */
   .stMarkdown {
     color: #000000;
+  }
+  
+  /* Body and Page Background */
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  .stApp {
+    background: #ffffff !important;
+  }
+  
+  [data-testid="stAppViewContainer"] {
+    background-color: #ffffff !important;
+  }
+  
+  [data-testid="stHeader"] {
+    background-color: #ffffff !important;
+  }
+  
+  .stMetric {
+    background: #f5f6f8;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .stMetricLabel {
+    color: #4a5568 !important;
+    font-weight: 600 !important;
+  }
+  
+  .stMetricValue {
+    color: #1a3a52 !important;
+    font-weight: 700 !important;
   }
 </style>
 """, unsafe_allow_html=True)
@@ -365,7 +433,41 @@ with st.sidebar:
   st.image("JTechLogistics_Logo.svg")
   st.markdown('</div>', unsafe_allow_html=True)
   
-  # Key Metrics Panel
+  # Navigation Section - FIRST
+  st.markdown('<span class="nav-label">Navigation</span>', unsafe_allow_html=True)
+  
+  # Create columns for navigation buttons
+  nav_items = [
+    "Opportunity Finder",
+    "Location Intelligence", 
+    "Schedule Optimizer",
+    "Mileage Efficiency",
+    "Anomaly Detection",
+    "Payment Reconciliation",
+    "Dispute Forensics",
+    "Trends & Forecast"
+  ]
+  
+  # Create a session state variable to track the selected page
+  if 'current_page' not in st.session_state:
+    st.session_state.current_page = nav_items[0]
+  
+  # Create button columns for better organization
+  col1, col2 = st.columns(2)
+  
+  for i, item in enumerate(nav_items):
+    if i % 2 == 0:
+      if col1.button(item, key=f"nav_{item}", use_container_width=True):
+        st.session_state.current_page = item
+        st.rerun()
+    else:
+      if col2.button(item, key=f"nav_{item}", use_container_width=True):
+        st.session_state.current_page = item
+        st.rerun()
+  
+  st.markdown('<div style="margin: 16px 0;"></div>', unsafe_allow_html=True)
+  
+  # Key Metrics Panel - SECOND
   st.markdown('<span class="metrics-header">Performance Metrics</span>', unsafe_allow_html=True)
   st.markdown('<div class="sidebar-metrics">', unsafe_allow_html=True)
   
@@ -398,18 +500,7 @@ with st.sidebar:
   st.markdown(metrics_html, unsafe_allow_html=True)
   st.markdown('</div>', unsafe_allow_html=True)
   
-  # Navigation Section
-  st.markdown('<span class="nav-label">Navigation</span>', unsafe_allow_html=True)
-  page = st.radio("", [
-    "Opportunity Finder",
-    "Location Intelligence", 
-    "Schedule Optimizer",
-    "Mileage Efficiency",
-    "Anomaly Detection",
-    "Payment Reconciliation",
-    "Dispute Forensics",
-    "Trends & Forecast"
-  ], label_visibility="collapsed")
+  page = st.session_state.current_page
 
 # ============================================================================
 # PAGE: OPPORTUNITY FINDER (Home)
