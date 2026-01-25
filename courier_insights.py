@@ -18,6 +18,11 @@ st.set_page_config(page_title="Courier Insights", layout="wide", initial_sidebar
 
 st.markdown("""
 <style>
+    /* Main Container */
+    .main {
+        padding-top: 2rem !important;
+    }
+    
     /* Sidebar Logo */
     .logo-container {
         text-align: center;
@@ -106,12 +111,52 @@ st.markdown("""
         margin-bottom: 10px;
     }
     
+    /* Page Header Styling */
+    h1 {
+        color: #1a1a1a !important;
+        border-bottom: 2px solid #0066cc;
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+    }
+    
+    h2 {
+        color: #0066cc !important;
+        margin-top: 24px;
+        margin-bottom: 12px;
+        font-weight: 700;
+    }
+    
+    h3 {
+        color: #333 !important;
+        margin-top: 16px;
+        margin-bottom: 10px;
+    }
+    
     /* Dividers */
     hr {
         border: none;
         height: 1px;
         background: rgba(0, 0, 0, 0.08);
         margin: 20px 0;
+    }
+    
+    /* Data Tables */
+    .dataframe {
+        background: #f8f9fa !important;
+        border-radius: 8px !important;
+    }
+    
+    .stDataFrame {
+        margin: 16px 0;
+    }
+    
+    /* Metric Cards */
+    .metric-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #e8eaed;
+        margin-bottom: 12px;
     }
     
     /* Sidebar header text */
