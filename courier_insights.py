@@ -802,6 +802,15 @@ if page == "Overview":
   # CHART VIEW: Best Restaurants by Earnings and Quality
   st.subheader("🍔 Best Restaurants by Earnings & Quality")
   
+  st.markdown("""
+  **Quality Metrics:** We measure restaurant performance using two key indicators:
+  
+  - **Average Per Trip:** $\\bar{x}_{\\text{trip}} = \\frac{\\text{Total Earnings}}{\\text{Trip Count}}$
+  - **Quality Score:** $Q = 100\\% - \\text{Reimbursement Rate}\\%$ (higher is better)
+  
+  Restaurants with more trips and higher quality scores are more reliable income sources.
+  """)
+  
   rest_stats = (
     tx.groupby('Restaurant')
       .agg(
@@ -916,6 +925,14 @@ if page == "Overview":
 elif page == "Locations":
   st.title("Location Intelligence")
   st.write("Which cities, restaurants, and areas pay best?")
+  
+  st.markdown("""
+  **Earnings by Location Formula:**
+  
+  $$\\text{{Location Quality}} = \\text{{Avg Earnings per Trip}} \\times \\frac{{\\text{{Trip Count}}}}{{\\text{{Total Trips}}}}$$
+  
+  Locations with high average earnings AND good volume are your "sweet spots"—prioritize them!
+  """)
   
   st.divider()
   
@@ -1293,8 +1310,14 @@ elif page == "Issues":
   
   if issue_tab == "Efficiency":
     st.subheader("Mileage Efficiency Analysis")
-  
-    # Efficiency metrics
+    
+    st.markdown(f"""
+    **Efficiency Calculation:**
+    
+    $$\\text{{Efficiency}} = \\frac{{\\text{{Total Net Earnings}}}}{{\\text{{Total Miles}}}} = \\frac{{{format_money(total_earnings)}}}{{{total_miles:,.0f} \\text{{ mi}}}} = {format_money(avg_per_mile)}/\\text{{mi}}$$
+    
+    Your efficiency score measures how much you earn per mile driven. Higher is better!
+    """)
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total Miles", f"{total_miles:,.0f}")
     col2.metric("Total Earnings", format_money(total_earnings))
@@ -2408,9 +2431,12 @@ elif page == "Year-End Report":
   
   ### Operational Efficiency Metrics
   
-  **Efficiency Benchmark:** At **{format_money(avg_per_mile_annual)} per mile**, your operation operates within competitive industry ranges 
-  for micro-mobility courier services. Premium operations typically target **$0.80-$1.20 per mile**. 
-  To improve this metric:
+  **Efficiency Formula:** Your cost efficiency is calculated as:
+  
+  $$\\eta = \\frac{{\\text{{Total Net Earnings}}}}{{\\text{{Total Miles Driven}}}} = \\frac{{{format_money(total_annual_earnings)}}}{{{total_annual_miles:,.0f} \\text{{ mi}}}} = {format_money(avg_per_mile_annual)}/\\text{{mile}}$$
+  
+  At **{format_money(avg_per_mile_annual)} per mile**, your operation operates within competitive industry ranges for micro-mobility courier services. 
+  Premium operations typically target **$0.80–$1.20 per mile**. To improve this metric:
   
   - Focus on longer-distance orders (reduces relative overhead)
   - Minimize empty miles by batching nearby pickups
@@ -2551,12 +2577,15 @@ elif page == "Year-End Report":
   Based on comprehensive analysis of {total_annual_trips:,} trips across {len(monthly_data)} months:
   
   **1. REVENUE OPTIMIZATION**
-  - Current $/mile efficiency is {format_money(avg_per_mile_annual)}. Target: Increase to {format_money(avg_per_mile_annual * 1.20)}
+  
+  Target efficiency growth:
+  $$\\eta_{{\\text{{target}}}} = \\eta_{{\\text{{current}}}} \\times 1.20 = {format_money(avg_per_mile_annual)} \\times 1.20 = {format_money(avg_per_mile_annual * 1.20)}/\\text{{mile}}$$
+  
   - Focus on high-tip restaurant partnerships
   - Shift work hours toward peak demand windows
   
   **2. OPERATIONAL SCALING**
-  - Monthly volume is {total_annual_trips / len(monthly_data):.0f} trips—sustainable growth target is +20-30%
+  - Monthly volume is {total_annual_trips / len(monthly_data):.0f} trips—sustainable growth target is +20–30%
   - Expand to underutilized cities for geographic load balancing
   - Implement route optimization to reduce empty miles
   
@@ -2568,10 +2597,10 @@ elif page == "Year-End Report":
   **4. FINANCIAL PLANNING**
   - Annual earnings: {format_money(total_annual_earnings)}
   - Projected monthly average: {format_money(total_annual_earnings / len(monthly_data))}
-  - Reserve 15-20% for vehicle maintenance, insurance, fuel fluctuations
+  - Reserve 15–20% for vehicle maintenance, insurance, fuel fluctuations
   
   **5. COMPETITIVE POSITIONING**
-  - Benchmark against industry standards: $0.80-1.20/mile for experienced couriers
+  - Benchmark against industry standards: $0.80–$1.20/mile for experienced couriers
   - Your current position: {'Below' if avg_per_mile_annual < 0.80 else 'At' if avg_per_mile_annual < 1.20 else 'Above'} industry average
   - Path to premium tier: Focus on quality, reliability, and geographic coverage
   """)
@@ -2586,11 +2615,14 @@ elif page == "Year-End Report":
   you've established a sustainable delivery operation with clear growth opportunities.
   
   **Primary Focus for Next Year:**
-  1. Increase efficiency from {format_money(avg_per_mile_annual)}/mile → {format_money(avg_per_mile_annual * 1.20)}/mile
-  2. Expand monthly volume from {total_annual_trips / len(monthly_data):.0f} → {total_annual_trips / len(monthly_data) * 1.25:.0f} trips
-  3. Monitor reimbursement processing: Track Shop & Pay lag times
   
-  *Report Generated: Year-End {pd.Timestamp.now().year} | Data Period: {format_month_human(monthly_data.iloc[0]['Month'])} - {format_month_human(monthly_data.iloc[-1]['Month'])}*
+  $$\\begin{{align}}
+  \\text{{1. Efficiency}} & : {format_money(avg_per_mile_annual)}/\\text{{mi}} \\rightarrow {format_money(avg_per_mile_annual * 1.20)}/\\text{{mi}} \\\\
+  \\text{{2. Monthly Volume}} & : {total_annual_trips / len(monthly_data):.0f} \\rightarrow {total_annual_trips / len(monthly_data) * 1.25:.0f} \\text{{ trips}} \\\\
+  \\text{{3. Monitor}} & : \\text{{Shop \\& Pay lag times}}
+  \\end{{align}}$$
+  
+  *Report Generated: Year-End {pd.Timestamp.now().year} | Data Period: {format_month_human(monthly_data.iloc[0]['Month'])} – {format_month_human(monthly_data.iloc[-1]['Month'])}*
   """)
 
 st.divider()
