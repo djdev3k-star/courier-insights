@@ -298,12 +298,45 @@ st.markdown("""
     color: #1a3a52 !important;
     font-weight: 700 !important;
   }
+  
+  /* Print Mode Styles */
+  @media print {
+    .stSidebar {
+      display: none !important;
+    }
+    .stAppHeader {
+      display: none !important;
+    }
+    .stToolbar {
+      display: none !important;
+    }
+    main {
+      padding: 0 !important;
+    }
+    .stMarkdown h1 {
+      page-break-after: avoid;
+      margin-top: 0;
+      border: none;
+      padding-bottom: 8px;
+    }
+    .stMarkdown h2 {
+      page-break-after: avoid;
+      margin-top: 24px;
+    }
+    .stDataFrame {
+      page-break-inside: avoid;
+      margin: 12px 0;
+    }
+    .plotly-container {
+      page-break-inside: avoid;
+    }
+    body {
+      background: white;
+      color: #000;
+    }
+  }
 </style>
 """, unsafe_allow_html=True)
-
-# ============================================================================
-# GLOBAL HELPER FUNCTIONS
-# ============================================================================
 
 def safe_read(path):
   """Safely read CSV file, return empty DataFrame if missing or error"""
@@ -322,6 +355,116 @@ def format_money(val):
 def format_percent(val):
   """Format value as percentage"""
   return f"{val:.1f}%"
+
+def format_month_human(month_str):
+  """Convert YYYY-MM to human-friendly format like 'August 2025'"""
+  try:
+    return pd.to_datetime(month_str + '-01').strftime('%B %Y')
+  except:
+    return month_str
+
+# Restaurant logo URLs (hardcoded for reliability)
+RESTAURANT_LOGOS = {
+    "McDonald's": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png",
+    "Taco Bell": "https://www.tacobell.com/favicon.ico",
+    "CVS": "https://www.cvs.com/favicon.ico",
+    "Jack in the Box": "https://www.jackinthebox.com/favicon.ico",
+    "24 Seven Tacos": "https://cdn-icons-png.flaticon.com/512/2919/2919600.png",
+    "Big Guys Chicken & Rice": "https://cdn-icons-png.flaticon.com/512/921/921489.png",
+    "Burger King": "https://www.burgerking.com/favicon.ico",
+    "Walgreens": "https://www.walgreens.com/favicon.ico",
+    "Target": "https://www.target.com/favicon.ico",
+    "Dollar General": "https://www.dollargeneral.com/favicon.ico",
+}
+
+def get_restaurant_logo(restaurant_name):
+  """Get restaurant logo from hardcoded map"""
+  return RESTAURANT_LOGOS.get(restaurant_name)
+
+@st.cache_data
+def load_geocoded_addresses():
+  """Load cached geocoded addresses, create if doesn't exist"""
+  geocode_file = Path('data/geocoded_addresses.csv')
+  if geocode_file.exists():
+    return pd.read_csv(geocode_file)
+  return pd.DataFrame(columns=['address', 'latitude', 'longitude'])
+
+def geocode_address(address):
+  """Geocode a single address using geopy with fallback"""
+  if pd.isna(address) or address == '':
+    return None, None
+  
+  try:
+    # Extract the cleaner part of the address (after the comma before restaurant name)
+    # Format: "Restaurant Name (shortaddr), Full Address, City, State ZIP, Country"
+    parts = str(address).split(',')
+    if len(parts) >= 3:
+      # Use: Street, City State Zip (ignore restaurant name and country)
+      clean_addr = ','.join(parts[-4:-1]).strip()  # Get the meaningful address parts
+    else:
+      clean_addr = address
+    
+    try:
+      from geopy.geocoders import Nominatim
+      from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+      
+      geolocator = Nominatim(user_agent="courier_insights_v2", timeout=10)
+      location = geolocator.geocode(clean_addr)
+      if location:
+        return float(location.latitude), float(location.longitude)
+    except ImportError:
+      pass  # Fall through to fallback
+    except (GeocoderTimedOut, GeocoderServiceError):
+      return None, None
+  except Exception as e:
+    pass
+  
+  return None, None
+
+@st.cache_data
+def get_coordinates_for_addresses(addresses_list):
+  """Get lat/lon for a list of addresses with progress tracking"""
+  geocoded = load_geocoded_addresses()
+  geocoded_dict = dict(zip(geocoded['address'], zip(geocoded['latitude'], geocoded['longitude'])))
+  
+  results = {}
+  new_addresses = []
+  
+  # Show progress
+  progress_bar = st.progress(0)
+  status_text = st.empty()
+  
+  for idx, addr in enumerate(addresses_list):
+    progress_bar.progress((idx + 1) / len(addresses_list))
+    status_text.text(f"Geocoding {idx + 1}/{len(addresses_list)}...")
+    
+    if pd.isna(addr):
+      results[addr] = (None, None)
+    elif addr in geocoded_dict:
+      results[addr] = geocoded_dict[addr]
+    else:
+      lat, lon = geocode_address(addr)
+      results[addr] = (lat, lon)
+      if lat and lon:
+        new_addresses.append({'address': addr, 'latitude': lat, 'longitude': lon})
+  
+  progress_bar.empty()
+  status_text.empty()
+  
+  # Save new addresses to cache
+  if new_addresses:
+    try:
+      Path('data').mkdir(exist_ok=True)
+      new_df = pd.DataFrame(new_addresses)
+      if geocoded.empty:
+        new_df.to_csv('data/geocoded_addresses.csv', index=False)
+      else:
+        geocoded = pd.concat([geocoded, new_df], ignore_index=True).drop_duplicates(subset=['address'])
+        geocoded.to_csv('data/geocoded_addresses.csv', index=False)
+    except Exception as e:
+      st.warning(f"Could not save geocode cache: {e}")
+  
+  return results
 
 # ============================================================================
 # LOAD ALL DATA
@@ -360,8 +503,10 @@ def load_data():
     if pd.isna(addr):
       return 'Unknown'
     parts = str(addr).split(',')
-    if len(parts) >= 3:
-      # City is typically 2 parts before end (before State ZIP)
+    if len(parts) >= 4:
+      # City is typically 2 parts before end (before State ZIP, before US)
+      return parts[-3].strip()
+    elif len(parts) >= 3:
       return parts[-2].strip()
     return 'Unknown'
   
@@ -370,7 +515,7 @@ def load_data():
       return ''
     parts = str(addr).split(',')
     if len(parts) >= 3:
-      # ZIP is in the last part before US, extract 5-digit code
+      # ZIP is in the State ZIP part (e.g., "TX 75126"), extract 5-digit code
       state_zip = parts[-2].strip() # e.g., "TX 75126"
       zip_parts = state_zip.split()
       if len(zip_parts) >= 2:
@@ -439,48 +584,75 @@ with st.sidebar:
   # Navigation Section - FIRST
   st.markdown('<span class="nav-label">Navigation</span>', unsafe_allow_html=True)
   
-  # Create columns for navigation buttons
-  nav_items = [
-    ("🏠 Overview", "Overview"),
-    ("🗺️ Routes", "Routes"),
-    ("📍 Locations", "Locations"),
-    ("📅 Schedule", "Schedule"),
-    ("💰 Payments", "Payments"),
-    ("⚠️ Issues", "Issues"),
-    ("📈 Trends", "Trends")
-  ]
-  
   # Create a session state variable to track the selected page
   if 'current_page' not in st.session_state:
     st.session_state.current_page = "Overview"
+
+  # Navigation items with descriptions
+  nav_items = [
+    {"label": "Overview", "page": "Overview", "desc": "Daily pulse"},
+    {"label": "Routes", "page": "Routes", "desc": "Best paths"},
+    {"label": "Locations", "page": "Locations", "desc": "Map intel"},
+    {"label": "Schedule", "page": "Schedule", "desc": "When to drive"},
+    {"label": "Payments", "page": "Payments", "desc": "Cashflow"},
+    {"label": "Issues", "page": "Issues", "desc": "Fix problems"},
+    {"label": "Trends", "page": "Trends", "desc": "Patterns"},
+    {"label": "Year-End Report", "page": "Year-End Report", "desc": "Annual analysis"}
+  ]
+
+  # Navigation
+  st.markdown('<span class="nav-label">Navigation</span>', unsafe_allow_html=True)
   
-  # Create button columns for better organization
-  col1, col2 = st.columns(2)
+  # Use selectbox for clean, working navigation
+  nav_labels = [item["label"] for item in nav_items]
+  current_index = nav_labels.index(st.session_state.current_page) if st.session_state.current_page in nav_labels else 0
   
-  for i, (label, page) in enumerate(nav_items):
-    if i % 2 == 0:
-      if col1.button(label, key=f"nav_{page}", use_container_width=True):
-        st.session_state.current_page = page
-        st.rerun()
-    else:
-      if col2.button(label, key=f"nav_{page}", use_container_width=True):
-        st.session_state.current_page = page
-        st.rerun()
+  selected_nav = st.selectbox(
+    "Select Page",
+    nav_labels,
+    index=current_index,
+    label_visibility="collapsed"
+  )
   
-  st.markdown('<div style="margin: 16px 0;"></div>', unsafe_allow_html=True)
+  # Update session state when selection changes
+  if selected_nav != st.session_state.current_page:
+    matching_item = next((item for item in nav_items if item["label"] == selected_nav), None)
+    if matching_item:
+      st.session_state.current_page = matching_item["page"]
+      st.rerun()
+
+  st.markdown('<div style="margin: 20px 0;"></div>', unsafe_allow_html=True)
+  st.divider()
+  st.markdown('<div style="margin: 20px 0;"></div>', unsafe_allow_html=True)
   
-  # Key Metrics Panel - SECOND
+  # Key Metrics Panel
   st.markdown('<span class="metrics-header">Performance Metrics</span>', unsafe_allow_html=True)
   st.markdown('<div class="sidebar-metrics">', unsafe_allow_html=True)
+  
+  # Check if there are cross-account transfers
+  cross_account_total = 0
+  if not multi_df.empty and 'Amount' in multi_df.columns:
+    cross_account_total = multi_df['Amount'].sum()
   
   metrics_html = f"""
   <div class="metric-row">
     <span class="metric-label">Total Earnings</span>
     <span class="metric-value">{format_money(total_earnings)}</span>
   </div>
+  """
+  
+  if cross_account_total > 0:
+    metrics_html += f"""
+  <div class="metric-row" style="font-size: 11px; padding-left: 8px;">
+    <span class="metric-label" style="color: #6b7280;">Inc. cross-account</span>
+    <span class="metric-value" style="color: #6b7280;">{format_money(cross_account_total)}</span>
+  </div>
+  """
+  
+  metrics_html += f"""
   <div class="metric-row">
     <span class="metric-label">Total Miles</span>
-    <span class="metric-value">{total_miles:,.0f}</span>
+    <span class="metric-value">{f"{total_miles:,.0f}"}</span>
   </div>
   <div class="metric-row">
     <span class="metric-label">$/Mile</span>
@@ -488,7 +660,7 @@ with st.sidebar:
   </div>
   <div class="metric-row">
     <span class="metric-label">Total Trips</span>
-    <span class="metric-value">{total_trips:,}</span>
+    <span class="metric-value">{f"{total_trips:,}"}</span>
   </div>
   <div class="metric-row">
     <span class="metric-label">Refund Rate</span>
@@ -509,8 +681,8 @@ with st.sidebar:
 # ============================================================================
 
 if page == "Overview":
-  st.title("Opportunity Finder")
-  st.write("Outliers, alerts, and opportunities to optimize your earnings")
+  st.title("Overview")
+  st.write("Visual intelligence: See where you earn the most")
   
   st.divider()
   
@@ -527,73 +699,215 @@ if page == "Overview":
   
   st.divider()
   
-  # ALERTS SECTION
-  st.subheader(" Active Alerts")
+  # MAP VIEW: Best Cities by Tip Rate
+  st.subheader("Best Cities by Tip Rate")
   
-  col1, col2, col3 = st.columns(3)
+  city_coords = {
+    'Dallas': (32.7767, -96.7970),
+    'Plano': (33.0198, -96.6989),
+    'McKinney': (33.1972, -96.6397),
+    'Frisco': (33.1507, -96.8236),
+    'Allen': (33.1031, -96.6705),
+    'Richardson': (32.9483, -96.7299),
+    'Garland': (32.9126, -96.6389),
+    'Mesquite': (32.7668, -96.5992),
+    'Irving': (32.8140, -96.9489),
+    'Carrollton': (32.9537, -96.8903),
+    'Lewisville': (33.0462, -96.9942),
+    'Denton': (33.2148, -97.1331),
+    'Fort Worth': (32.7555, -97.3308),
+    'Arlington': (32.7357, -97.1081),
+    'Forney': (32.7479, -96.4719),
+    'Balch Springs': (32.7287, -96.6228),
+    'Seagoville': (32.6390, -96.5386)
+  }
+  
+  city_stats = tx.groupby('Pickup City').agg({
+    'Net Earnings': 'sum',
+    'Tip': 'sum',
+    'Fare': 'sum',
+    'Trip UUID': 'count'
+  }).reset_index()
+  city_stats.columns = ['Pickup City', 'Net Earnings', 'Tip', 'Fare', 'Trip Count']
+  city_stats['Base'] = city_stats['Fare'].where(city_stats['Fare'] > 0, city_stats['Net Earnings'])
+  city_stats = city_stats[city_stats['Base'] > 0]
+  city_stats['Tip Rate %'] = ((city_stats['Tip'] / city_stats['Base']) * 100).clip(upper=100).round(1)
+  
+  # Filter to meaningful sample size: at least $200 earnings and 3+ trips
+  city_stats_filtered = city_stats[(city_stats['Net Earnings'] >= 200) & (city_stats['Trip Count'] >= 3)].copy()
+
+  # Coordinates: use known map, otherwise default to Dallas centroid with jitter
+  dallas_lat, dallas_lon = 32.7767, -96.7970
+  city_stats_filtered['lat'] = city_stats_filtered['Pickup City'].map(lambda x: city_coords.get(x, (dallas_lat, dallas_lon))[0])
+  city_stats_filtered['lon'] = city_stats_filtered['Pickup City'].map(lambda x: city_coords.get(x, (dallas_lat, dallas_lon))[1])
+  missing_mask = ~city_stats_filtered['Pickup City'].isin(city_coords.keys())
+  if missing_mask.any():
+    city_stats_filtered.loc[missing_mask, 'lat'] = city_stats_filtered.loc[missing_mask, 'lat'] + np.random.normal(0, 0.05, missing_mask.sum())
+    city_stats_filtered.loc[missing_mask, 'lon'] = city_stats_filtered.loc[missing_mask, 'lon'] + np.random.normal(0, 0.05, missing_mask.sum())
+
+  if city_stats_filtered.empty:
+    st.info("No cities with significant activity ($200+ earnings, 3+ trips). Focus on building volume in key areas.")
+  else:
+    fig_cities = px.scatter_mapbox(
+      city_stats_filtered,
+      lat='lat',
+      lon='lon',
+      size='Net Earnings',
+      color='Tip Rate %',
+      hover_name='Pickup City',
+      hover_data={
+        'Net Earnings': ':$,.0f',
+        'Tip Rate %': ':.1f',
+        'Trip Count': True,
+        'lat': False,
+        'lon': False
+      },
+      color_continuous_scale='RdYlGn',
+      size_max=30,
+      mapbox_style='streets',
+      height=500
+    )
+    # Auto-zoom to fit data bounds
+    lat_range = city_stats_filtered['lat'].max() - city_stats_filtered['lat'].min()
+    lon_range = city_stats_filtered['lon'].max() - city_stats_filtered['lon'].min()
+    center_lat = (city_stats_filtered['lat'].max() + city_stats_filtered['lat'].min()) / 2
+    center_lon = (city_stats_filtered['lon'].max() + city_stats_filtered['lon'].min()) / 2
+    max_range = max(lat_range, lon_range) if max(lat_range, lon_range) > 0 else 1
+    # Better zoom calculation: lower number = more zoomed out, can see more area
+    if max_range < 0.2:
+      zoom_level = 14
+    elif max_range < 0.5:
+      zoom_level = 12
+    elif max_range < 1:
+      zoom_level = 11
+    elif max_range < 2:
+      zoom_level = 10
+    else:
+      zoom_level = 9
+    fig_cities.update_layout(
+      margin=dict(l=0, r=0, t=0, b=0),
+      mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom_level),
+      height=500
+    )
+    st.plotly_chart(fig_cities, use_container_width=True, key="cities_map")
+  
+  # Top 5 cities by tip rate (from filtered set)
+  top_tip_cities = city_stats_filtered.nlargest(5, 'Tip Rate %')[['Pickup City', 'Tip Rate %', 'Net Earnings', 'Trip Count']]
+  st.caption("**Sweet Spots (Best Tip Rates with Significant Volume):**")
+  for _, row in top_tip_cities.iterrows():
+    st.caption(f"- **{row['Pickup City']}**: {row['Tip Rate %']:.1f}% tip rate, {format_money(row['Net Earnings'])} total ({int(row['Trip Count'])} trips)")
+  
+  st.divider()
+  
+  # CHART VIEW: Best Restaurants by Earnings and Quality
+  st.subheader("🍔 Best Restaurants by Earnings & Quality")
+  
+  rest_stats = (
+    tx.groupby('Restaurant')
+      .agg(
+        Net_Earnings=('Net Earnings', 'sum'),
+        Avg_Earnings=('Net Earnings', 'mean'),
+        Refund_Count=('Refund', lambda x: (x != 0).sum()),
+        Trip_Count=('Restaurant', 'size'),
+        City=('Pickup City', lambda x: x.mode().iloc[0] if not x.mode().empty else 'Unknown')
+      )
+      .reset_index()
+  )
+  rest_stats.columns = ['Restaurant', 'Net Earnings', 'Avg Earnings', 'Refund Count', 'Trip Count', 'City']
+  rest_stats['Refund Rate %'] = (rest_stats['Refund Count'] / rest_stats['Trip Count'] * 100).round(1)
+  rest_stats['Quality Score'] = (100 - rest_stats['Refund Rate %']).round(1)
+
+  # Filter for restaurants with 3+ trips and sort by total earnings
+  top_restaurants = rest_stats[rest_stats['Trip Count'] >= 3].nlargest(15, 'Net Earnings')
+
+  if not top_restaurants.empty:
+    # Create bubble chart: X=Total Earnings, Y=Quality Score, Size=Trip Count
+    fig_restaurants = px.scatter(
+      top_restaurants,
+      x='Net Earnings',
+      y='Quality Score',
+      size='Trip Count',
+      color='Avg Earnings',
+      hover_name='Restaurant',
+      hover_data={
+        'City': True,
+        'Net Earnings': ':$,.0f',
+        'Avg Earnings': ':$,.2f',
+        'Quality Score': ':.1f',
+        'Trip Count': True,
+        'Refund Count': True
+      },
+      color_continuous_scale='RdYlGn',
+      size_max=50,
+      height=500,
+      labels={
+        'Net Earnings': 'Total Earnings ($)',
+        'Quality Score': 'Quality Score (100 = perfect)',
+        'Avg Earnings': 'Avg per Trip'
+      }
+    )
+    fig_restaurants.update_layout(
+      title="Restaurant Performance: Earnings vs Quality (bubble size = trip count)",
+      xaxis_title="Total Earnings ($)",
+      yaxis_title="Quality Score (lower = more refunds)",
+      showlegend=True,
+      hovermode='closest'
+    )
+    # Add reference line at 85% quality
+    fig_restaurants.add_hline(y=85, line_dash="dash", line_color="orange", 
+                             annotation_text="Quality Threshold (85%)", 
+                             annotation_position="right")
+    st.plotly_chart(fig_restaurants, use_container_width=True, key="restaurants_chart")
+    
+    st.caption("💡 **Look for**: Large bubbles (many trips) in the upper-right (high earnings + quality). Avoid bottom-left (low earnings + poor quality).")
+  
+  st.divider()
+  
+  # Show top 5 by earnings and top 5 by quality side by side with better UI
+  col1, col2 = st.columns(2)
   
   with col1:
-    if refund_count > 0:
-      st.error(f" {refund_count} Refunds Detected")
-      st.caption(f"Total refund amount: {format_money(tx['Refund'].sum())}")
+    st.subheader("Top 5 by Total Earnings")
+    top_by_earnings = rest_stats[rest_stats['Trip Count'] >= 3].nlargest(5, 'Net Earnings')
+    for idx, (_, row) in enumerate(top_by_earnings.iterrows(), 1):
+      logo = get_restaurant_logo(row['Restaurant'])
+      logo_html = f'<img src="{logo}" style="height:28px; margin-right:10px; vertical-align:middle; border-radius:4px; display:inline-block;" onerror="this.style.display=\'none\'">' if logo else ""
+      st.markdown(f"""
+{idx}. {logo_html}**{row['Restaurant']}**  
+   {format_money(row['Net Earnings'])} • {int(row['Trip Count'])} trips • {row['Quality Score']:.0f}% quality
+""", unsafe_allow_html=True)
   
   with col2:
-    if low_pay_trips > 0:
-      st.warning(f" {low_pay_trips} Low-Pay Trips")
-      st.caption(f"<$3.00 (investigate why)")
-  
-  with col3:
-    if high_pay_trips > 0:
-      st.success(f" {high_pay_trips} High-Pay Trips")
-      st.caption(f">$15.00 (replicate this!)")
-  
-  st.divider()
-  
-  # OUTLIERS: Worst trips
-  st.subheader(" Worst Performing Trips")
-  worst = tx.nsmallest(10, 'Net Earnings')[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Refund']]
-  worst_display = worst.copy()
-  worst_display['Trip drop off time'] = worst_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
-  worst_display['Location'] = worst_display['Restaurant'] + ' (' + worst_display['Pickup City'] + ')'
-  worst_display = worst_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Refund']]
-  worst_display['Trip distance'] = worst_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
-  worst_display['Net Earnings'] = worst_display['Net Earnings'].apply(format_money)
-  worst_display['Refund'] = worst_display['Refund'].apply(lambda x: format_money(x) if x != 0 else "—")
-  
-  st.dataframe(worst_display, width='stretch', hide_index=True)
-  st.caption("Why were these low? Refund? Bad location? Check Dispute Forensics for details.")
+    st.subheader("Top 5 by Quality Score")
+    top_by_quality = rest_stats[(rest_stats['Trip Count'] >= 5) & (rest_stats['Net Earnings'] > 50)].nlargest(5, 'Quality Score')
+    if not top_by_quality.empty:
+      for idx, (_, row) in enumerate(top_by_quality.iterrows(), 1):
+        logo = get_restaurant_logo(row['Restaurant'])
+        logo_html = f'<img src="{logo}" style="height:28px; margin-right:10px; vertical-align:middle; border-radius:4px; display:inline-block;" onerror="this.style.display=\'none\'">' if logo else ""
+        st.markdown(f"""
+{idx}. {logo_html}**{row['Restaurant']}**  
+   {row['Quality Score']:.0f}% quality • {format_money(row['Net Earnings'])} • 0 refunds
+""", unsafe_allow_html=True)
+    else:
+      st.info("Need 5+ trips and $50+ earnings to rank")
   
   st.divider()
   
-  # OUTLIERS: Best trips
-  st.subheader(" Best Performing Trips")
-  best = tx.nlargest(10, 'Net Earnings')[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Tip']]
-  best_display = best.copy()
-  best_display['Trip drop off time'] = best_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
-  best_display['Location'] = best_display['Restaurant'] + ' (' + best_display['Pickup City'] + ')'
-  best_display = best_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Tip']]
-  best_display['Trip distance'] = best_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
-  best_display['Net Earnings'] = best_display['Net Earnings'].apply(format_money)
-  best_display['Tip'] = best_display['Tip'].apply(format_money)
-  
-  st.dataframe(best_display, width='stretch', hide_index=True)
-  st.caption("Pattern: What made these trips valuable? Location? Time? Distance? Replicate!")
+  # High reimbursement (Shop & Pay / Order & Pay) restaurants
+  high_refund = rest_stats[rest_stats['Refund Rate %'] > 15].nlargest(5, 'Refund Count')
+  if not high_refund.empty:
+    st.subheader("High Reimbursement Locations")
+    st.caption("Shop & Pay / Order & Pay: you paid, later reimbursed")
+    for idx, (_, row) in enumerate(high_refund.iterrows(), 1):
+      refund_pct = row['Refund Rate %']
+      logo = get_restaurant_logo(row['Restaurant'])
+      logo_html = f'<img src="{logo}" style="height:28px; margin-right:10px; vertical-align:middle; border-radius:4px; display:inline-block;" onerror="this.style.display=\'none\'">' if logo else ""
+      st.markdown(f"""
+{idx}. {logo_html}**{row['Restaurant']}** ({row['City']})  
+   {int(row['Refund Count'])}/{int(row['Trip Count'])} refunds ({refund_pct:.1f}%)
+""", unsafe_allow_html=True)
   
   st.divider()
-  
-  # Most efficient trips
-  st.subheader(" Most Efficient Trips ($/Mile)")
-  efficient = tx.nlargest(10, 'Earnings Per Mile')[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
-  eff_display = efficient.copy()
-  eff_display['Trip drop off time'] = eff_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
-  eff_display['Location'] = eff_display['Restaurant'] + ' (' + eff_display['Pickup City'] + ')'
-  eff_display = eff_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
-  eff_display['Trip distance'] = eff_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
-  eff_display['Net Earnings'] = eff_display['Net Earnings'].apply(format_money)
-  eff_display['Earnings Per Mile'] = eff_display['Earnings Per Mile'].apply(format_money)
-  
-  st.dataframe(eff_display, width='stretch', hide_index=True)
-  st.caption("These trips were quick money. Short distance, good payout = maximize these!")
 
 # ============================================================================
 # PAGE: LOCATION INTELLIGENCE
@@ -602,6 +916,225 @@ if page == "Overview":
 elif page == "Locations":
   st.title("Location Intelligence")
   st.write("Which cities, restaurants, and areas pay best?")
+  
+  st.divider()
+  
+  # City coordinates
+  city_coords = {
+    'Dallas': (32.7767, -96.7970),
+    'Plano': (33.0198, -96.6989),
+    'McKinney': (33.1972, -96.6397),
+    'Frisco': (33.1507, -96.8236),
+    'Allen': (33.1031, -96.6705),
+    'Richardson': (32.9483, -96.7299),
+    'Garland': (32.9126, -96.6389),
+    'Mesquite': (32.7668, -96.5992),
+    'Irving': (32.8140, -96.9489),
+    'Carrollton': (32.9537, -96.8903),
+    'Lewisville': (33.0462, -96.9942),
+    'Denton': (33.2148, -97.1331),
+    'Fort Worth': (32.7555, -97.3308),
+    'Arlington': (32.7357, -97.1081),
+    'Forney': (32.7479, -96.4719),
+    'Balch Springs': (32.7287, -96.6228),
+    'Seagoville': (32.6390, -96.5386)
+  }
+  
+  # Map view selector
+  map_view = st.radio(
+    "Map View",
+    ["City Aggregation", "Heatmap Performance", "Individual Trips"],
+    horizontal=True
+  )
+  
+  if map_view == "City Aggregation":
+    # Aggregate by city
+    city_agg = tx.groupby('Pickup City').agg({
+      'Net Earnings': 'sum',
+      'Trip UUID': 'count'
+    }).reset_index()
+    city_agg.columns = ['City', 'Total Earnings', 'Trip Count']
+    
+    # Add coordinates
+    map_data = []
+    for _, row in city_agg.iterrows():
+      if row['City'] in city_coords:
+        map_data.append({
+          'City': row['City'],
+          'lat': city_coords[row['City']][0],
+          'lon': city_coords[row['City']][1],
+          'Earnings': row['Total Earnings'],
+          'Trips': row['Trip Count']
+        })
+    
+    if map_data:
+      map_df = pd.DataFrame(map_data)
+      fig = px.scatter_mapbox(
+        map_df,
+        lat='lat',
+        lon='lon',
+        size='Earnings',
+        color='Earnings',
+        hover_name='City',
+        hover_data={'Earnings': ':$.2f', 'Trips': True, 'lat': False, 'lon': False},
+        color_continuous_scale=['#6ba3d0', '#1e5a96', '#1a3a52'],
+        size_max=50,
+        height=500,
+        mapbox_style='streets'
+      )
+      # Auto-zoom to fit data
+      if len(map_df) > 0:
+        lat_range = map_df['lat'].max() - map_df['lat'].min()
+        lon_range = map_df['lon'].max() - map_df['lon'].min()
+        center_lat = (map_df['lat'].max() + map_df['lat'].min()) / 2
+        center_lon = (map_df['lon'].max() + map_df['lon'].min()) / 2
+        max_range = max(lat_range, lon_range) if max(lat_range, lon_range) > 0 else 1
+        if max_range < 0.2:
+          zoom = 14
+        elif max_range < 0.5:
+          zoom = 12
+        elif max_range < 1:
+          zoom = 11
+        elif max_range < 2:
+          zoom = 10
+        else:
+          zoom = 9
+        fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom))
+      else:
+        fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+      st.plotly_chart(fig, use_container_width=True)
+  
+  elif map_view == "Heatmap Performance":
+    # Create heatmap with city earnings
+    heat_data = []
+    for city, coords in city_coords.items():
+      city_earnings = tx[tx['Pickup City'] == city]['Net Earnings'].mean()
+      if pd.notna(city_earnings):
+        heat_data.append({
+          'lat': coords[0],
+          'lon': coords[1],
+          'earnings': city_earnings
+        })
+    
+    if heat_data:
+      heatmap_df = pd.DataFrame(heat_data)
+      fig = px.density_mapbox(
+        heatmap_df,
+        lat='lat',
+        lon='lon',
+        z='earnings',
+        radius=25,
+        mapbox_style='streets',
+        height=500,
+        color_continuous_scale=['#6ba3d0', '#1e5a96', '#1a3a52']
+      )
+      # Auto-zoom
+      center_lat = 32.9
+      center_lon = -96.8
+      if len(heatmap_df) > 0:
+        lat_range = heatmap_df['lat'].max() - heatmap_df['lat'].min()
+        lon_range = heatmap_df['lon'].max() - heatmap_df['lon'].min()
+        center_lat = (heatmap_df['lat'].max() + heatmap_df['lat'].min()) / 2
+        center_lon = (heatmap_df['lon'].max() + heatmap_df['lon'].min()) / 2
+        max_range = max(lat_range, lon_range) if max(lat_range, lon_range) > 0 else 1
+        if max_range < 0.2:
+          zoom = 14
+        elif max_range < 0.5:
+          zoom = 12
+        elif max_range < 1:
+          zoom = 11
+        elif max_range < 2:
+          zoom = 10
+        else:
+          zoom = 9
+      else:
+        zoom = 9
+      fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom))
+      st.plotly_chart(fig, use_container_width=True)
+      
+      # Stats table
+      st.subheader("Performance Stats")
+      stats = tx.groupby('Pickup City').agg({
+        'Net Earnings': ['mean', 'sum', 'count'],
+        'Tip': 'mean'
+      }).round(2)
+      stats.columns = ['Avg Earnings', 'Total', 'Trips', 'Avg Tip']
+      stats = stats.sort_values('Avg Earnings', ascending=False).head(10)
+      st.dataframe(stats, use_container_width=True)
+  
+  else:  # Individual Trips
+    # Filters
+    col1, col2, col3 = st.columns(3)
+    with col1:
+      min_earn = st.number_input("Min Earnings", value=0.0, step=5.0)
+    with col2:
+      max_earn = st.number_input("Max Earnings", value=50.0, step=5.0)
+    with col3:
+      # Create human-friendly month options
+      month_options = ['All'] + sorted(tx['Month'].unique().tolist())
+      month_display = ['All'] + [format_month_human(m) for m in sorted(tx['Month'].unique().tolist())]
+      selected_month_display = st.selectbox("Month", month_display)
+      # Convert back to YYYY-MM format for filtering
+      if selected_month_display == 'All':
+        selected_month = 'All'
+      else:
+        selected_month_idx = month_display.index(selected_month_display)
+        selected_month = month_options[selected_month_idx]
+    
+    # Filter data
+    filtered = tx[(tx['Net Earnings'] >= min_earn) & (tx['Net Earnings'] <= max_earn)]
+    if selected_month != 'All':
+      filtered = filtered[filtered['Month'] == selected_month]
+    
+    # Map individual trips
+    trip_data = []
+    for _, row in filtered.head(200).iterrows():
+      city = row['Pickup City']
+      if city in city_coords:
+        trip_data.append({
+          'lat': city_coords[city][0],
+          'lon': city_coords[city][1],
+          'Earnings': row['Net Earnings'],
+          'Restaurant': row['Restaurant'],
+          'City': city
+        })
+    
+    if trip_data:
+      trip_df = pd.DataFrame(trip_data)
+      fig = px.scatter_mapbox(
+        trip_df,
+        lat='lat',
+        lon='lon',
+        color='Earnings',
+        size='Earnings',
+        hover_name='Restaurant',
+        hover_data={'City': True, 'Earnings': ':$.2f', 'lat': False, 'lon': False},
+        color_continuous_scale=['#6ba3d0', '#1e5a96', '#1a3a52'],
+        size_max=15,
+        height=500,
+        mapbox_style='streets'
+      )
+      # Auto-zoom
+      if len(trip_df) > 0:
+        lat_range = trip_df['lat'].max() - trip_df['lat'].min()
+        lon_range = trip_df['lon'].max() - trip_df['lon'].min()
+        center_lat = (trip_df['lat'].max() + trip_df['lat'].min()) / 2
+        center_lon = (trip_df['lon'].max() + trip_df['lon'].min()) / 2
+        max_range = max(lat_range, lon_range) if max(lat_range, lon_range) > 0 else 1
+        if max_range < 0.2:
+          zoom = 14
+        elif max_range < 0.5:
+          zoom = 12
+        elif max_range < 1:
+          zoom = 11
+        elif max_range < 2:
+          zoom = 10
+        else:
+          zoom = 9
+        fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom))
+      else:
+        fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+      st.plotly_chart(fig, use_container_width=True)
   
   st.divider()
   
@@ -664,81 +1197,6 @@ elif page == "Locations":
   rest_display['Trips'] = rest_display['Trips'].astype(int)
   
   st.dataframe(rest_display, width='stretch')
-  st.caption("Watch refunds by restaurant - some locations have quality/timing issues")
-  
-  st.divider()
-  
-  # Zip code heatmap
-  st.subheader(" Earnings by Zip Code")
-  
-  zip_stats = tx.groupby('Pickup Zip').agg({
-    'Net Earnings': ['sum', 'mean', 'count'],
-    'Tip': 'mean'
-  }).round(2)
-  zip_stats.columns = ['Total', 'Avg Earnings', 'Trip Count', 'Avg Tip']
-  zip_stats = zip_stats[zip_stats['Trip Count'] >= 2].sort_values('Avg Earnings', ascending=False)
-  
-  zip_display = zip_stats.copy()
-  zip_display['Total'] = zip_display['Total'].apply(format_money)
-  zip_display['Avg Earnings'] = zip_display['Avg Earnings'].apply(format_money)
-  zip_display['Avg Tip'] = zip_display['Avg Tip'].apply(format_money)
-  zip_display['Trip Count'] = zip_display['Trip Count'].astype(int)
-  
-  st.dataframe(zip_display, width='stretch')
-  
-  st.divider()
-  
-  # City-Zip breakdown (detailed view)
-  st.subheader(" Detailed: City Names with Zip Codes")
-  
-  detailed = tx.groupby(['Pickup City', 'Pickup Zip']).agg({
-    'Net Earnings': ['sum', 'mean', 'count'],
-    'Refund': 'sum'
-  }).round(2)
-  detailed.columns = ['Total Earnings', 'Avg Per Trip', 'Trips', 'Total Refunds']
-  detailed = detailed[detailed['Trips'] >= 2].sort_values('Avg Per Trip', ascending=False)
-  
-  detail_display = detailed.copy()
-  detail_display.index.names = ['City', 'Zip']
-  detail_display = detail_display.reset_index()
-  detail_display['Location'] = detail_display['City'] + ' ' + detail_display['Zip']
-  detail_display = detail_display[['Location', 'Total Earnings', 'Avg Per Trip', 'Trips', 'Total Refunds']]
-  
-  detail_display['Total Earnings'] = detail_display['Total Earnings'].apply(format_money)
-  detail_display['Avg Per Trip'] = detail_display['Avg Per Trip'].apply(format_money)
-  detail_display['Total Refunds'] = detail_display['Total Refunds'].apply(format_money)
-  detail_display['Trips'] = detail_display['Trips'].astype(int)
-  
-  st.dataframe(detail_display, width='stretch', hide_index=True)
-  
-  st.divider()
-  
-  # Earnings distribution by city
-  st.subheader(" Earnings Distribution by City")
-  
-  top_cities = tx['Pickup City'].value_counts().head(8).index
-  city_data = tx[tx['Pickup City'].isin(top_cities)]
-  
-  fig = px.box(city_data, x='Pickup City', y='Net Earnings',
-        title="Earnings Range by Top Cities",
-        color='Pickup City',
-        height=400)
-  st.plotly_chart(fig, width='stretch')
-  
-  st.divider()
-  
-  # Restaurant earnings trend
-  st.subheader(" Top Restaurants - Earnings Comparison")
-  
-  top_restaurants = tx['Restaurant'].value_counts().head(10).index
-  rest_data = tx[tx['Restaurant'].isin(top_restaurants)]
-  
-  fig = px.box(rest_data, x='Restaurant', y='Net Earnings',
-        title="Earnings Range by Top Restaurants (10+ orders)",
-        color='Restaurant',
-        height=400)
-  fig.update_xaxes(tickangle=-45)
-  st.plotly_chart(fig, width='stretch')
 
 # ============================================================================
 # PAGE: SCHEDULE OPTIMIZER
@@ -751,7 +1209,7 @@ elif page == "Schedule":
   st.divider()
   
   # Hourly analysis
-  st.subheader("⏱ Earnings by Hour of Day")
+  st.subheader("Earnings by Hour of Day")
   
   hourly = tx.groupby('Hour').agg({
     'Net Earnings': ['sum', 'mean', 'count'],
@@ -827,13 +1285,13 @@ elif page == "Issues":
   # Tab selection
   issue_tab = st.radio(
     "Issue Category",
-    ["⚡ Efficiency", "🔔 Refunds & Disputes", "🚨 Anomalies"],
+    ["Efficiency", "Refunds & Disputes", "Anomalies"],
     horizontal=True
   )
   
   st.divider()
   
-  if issue_tab == "⚡ Efficiency":
+  if issue_tab == "Efficiency":
     st.subheader("Mileage Efficiency Analysis")
   
     # Efficiency metrics
@@ -845,30 +1303,39 @@ elif page == "Issues":
     
     st.divider()
     
-    # Most efficient trips
-    st.subheader(" Most Efficient Trips ($/Mile)")
-    efficient = tx.nlargest(10, 'Earnings Per Mile')[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
-    eff_display = efficient.copy()
-    eff_display['Trip drop off time'] = eff_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
-    eff_display['Location'] = eff_display['Restaurant'] + ' (' + eff_display['Pickup City'] + ')'
-    eff_display = eff_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
-    eff_display['Trip distance'] = eff_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
-    eff_display['Net Earnings'] = eff_display['Net Earnings'].apply(format_money)
-    eff_display['Earnings Per Mile'] = eff_display['Earnings Per Mile'].apply(format_money)
+    # Most efficient trips (require valid distance)
+    st.subheader("Most Efficient Trips ($/Mile)")
+    valid_eff = tx[(tx['Trip distance'].notna()) & (tx['Trip distance'] > 0)]
+    missing_distance = len(tx) - len(valid_eff)
     
-    st.dataframe(eff_display, width='stretch', hide_index=True)
-    st.caption("These trips were quick money. Short distance, good payout = maximize these!")
+    if valid_eff.empty:
+      st.info("No trips have a recorded distance. The source export may have missing distance data.")
+    else:
+      efficient = valid_eff.nlargest(10, 'Earnings Per Mile')[['Trip drop off time', 'Restaurant', 'Pickup City', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
+      eff_display = efficient.copy()
+      eff_display['Trip drop off time'] = eff_display['Trip drop off time'].dt.strftime('%m-%d %H:%M')
+      eff_display['Location'] = eff_display['Restaurant'] + ' (' + eff_display['Pickup City'] + ')'
+      eff_display = eff_display[['Trip drop off time', 'Location', 'Trip distance', 'Net Earnings', 'Earnings Per Mile']]
+      eff_display['Trip distance'] = eff_display['Trip distance'].apply(lambda x: f"{x:.1f}mi")
+      eff_display['Net Earnings'] = eff_display['Net Earnings'].apply(format_money)
+      eff_display['Earnings Per Mile'] = eff_display['Earnings Per Mile'].apply(format_money)
+      
+      st.dataframe(eff_display, width='stretch', hide_index=True)
+      st.caption("These trips require a recorded distance. Short distance, good payout = maximize these!")
+    
+    if missing_distance > 0:
+      st.caption(f"{missing_distance} trips skipped because distance was missing or zero in the source export.")
   
-  elif issue_tab == "🔔 Refunds & Disputes":
-    st.subheader("Refunds & Dispute Forensics")
+  elif issue_tab == "Refunds & Disputes":
+    st.subheader("Refunds & Dispute Forensics (Shop & Pay / Order & Pay reimbursements you fronted)")
     
     # Refund summary
     refunded_trips = tx[tx['Refund'] != 0]
     
     col1, col2, col3 = st.columns(3)
-    col1.metric("Refunded Trips", len(refunded_trips))
+    col1.metric("Refunded Trips (Shop/Order & Pay)", len(refunded_trips))
     col2.metric("Refund Rate", format_percent(refund_rate))
-    col3.metric("Total Refunded", format_money(tx['Refund'].sum()))
+    col3.metric("Total Reimbursed (you fronted)", format_money(tx['Refund'].sum()))
     
     st.divider()
     
@@ -886,7 +1353,7 @@ elif page == "Issues":
     else:
       st.success("No refunds found!")
   
-  elif issue_tab == "🚨 Anomalies":
+  elif issue_tab == "Anomalies":
     st.subheader("Payment Anomalies")
     
     # Low pay anomalies
@@ -919,7 +1386,148 @@ elif page == "Routes":
   
   st.divider()
   
-  st.subheader("🗺️ Top Cities by Earnings")
+  # ===== MAP 1: TRIP PICKUP HEATMAP =====
+  st.subheader("📍 Pickup Location Density Heatmap")
+  st.caption("Heat intensity = number of trips from that area")
+  
+  pickup_data = tx[tx['Pickup City'].notna()].copy()
+  if not pickup_data.empty:
+    dallas_lat, dallas_lon = 32.7767, -96.7970
+    city_coords = {
+      'Dallas': (32.7767, -96.7970),
+      'Arlington': (32.7357, -97.1081),
+      'Fort Worth': (32.7555, -97.3308),
+      'Plano': (33.0198, -96.6989),
+      'Irving': (32.8140, -96.9489),
+      'Frisco': (33.1637, -96.8236),
+      'McKinney': (33.1972, -96.6397),
+      'Lewisville': (33.0048, -96.5248),
+      'Denton': (33.2148, -97.1331),
+      'Carrollton': (32.9735, -96.8899),
+    }
+    
+    pickup_data['lat'] = pickup_data['Pickup City'].map(lambda x: city_coords.get(x, (dallas_lat, dallas_lon))[0])
+    pickup_data['lon'] = pickup_data['Pickup City'].map(lambda x: city_coords.get(x, (dallas_lat, dallas_lon))[1])
+    
+    # Add jitter to prevent overlapping
+    pickup_data['lat'] = pickup_data['lat'] + np.random.normal(0, 0.03, len(pickup_data))
+    pickup_data['lon'] = pickup_data['lon'] + np.random.normal(0, 0.03, len(pickup_data))
+    
+    fig_pickup = px.density_mapbox(
+      pickup_data,
+      lat='lat',
+      lon='lon',
+      mapbox_style='streets',
+      height=500,
+      color_continuous_scale='Viridis',
+      radius=40,
+      zoom=9
+    )
+    fig_pickup.update_layout(
+      margin=dict(l=0, r=0, t=0, b=0),
+      mapbox=dict(center=dict(lat=32.85, lon=-96.85), zoom=9)
+    )
+    st.plotly_chart(fig_pickup, use_container_width=True, key="pickup_heatmap")
+  else:
+    st.warning("No pickup location data available")
+  
+  st.divider()
+  
+  # ===== MAP 2: TOP EARNING ZONES =====
+  st.subheader("💰 Top Earning Zones by Location")
+  st.caption("Street-level view of top earning pickup locations")
+  
+  # Get actual pickup coordinates from addresses
+  pickup_with_address = tx[tx['Pickup address'].notna()].copy()
+  
+  if not pickup_with_address.empty:
+    # Get unique addresses to geocode
+    unique_addresses = pickup_with_address['Pickup address'].unique().tolist()
+    
+    with st.spinner(f"🔄 Geocoding {len(unique_addresses)} addresses... (this may take a moment)"):
+      coords_dict = get_coordinates_for_addresses(unique_addresses)
+    
+    # Add coordinates to data
+    pickup_with_address['lat'] = pickup_with_address['Pickup address'].map(lambda x: coords_dict.get(x, (None, None))[0])
+    pickup_with_address['lon'] = pickup_with_address['Pickup address'].map(lambda x: coords_dict.get(x, (None, None))[1])
+    
+    # Remove rows without coordinates
+    pickup_with_coords = pickup_with_address[pickup_with_address['lat'].notna() & pickup_with_address['lon'].notna()]
+    
+    if not pickup_with_coords.empty:
+      # Aggregate by address 
+      pickup_agg = pickup_with_coords.groupby('Pickup address').agg({
+        'Net Earnings': ['sum', 'mean'],
+        'Trip UUID': 'count',
+        'lat': 'first',
+        'lon': 'first'
+      }).reset_index()
+      pickup_agg.columns = ['Address', 'Total Earnings', 'Avg per Trip', 'Trip Count', 'lat', 'lon']
+      pickup_agg = pickup_agg[pickup_agg['Trip Count'] >= 2].sort_values('Total Earnings', ascending=False).head(20)
+      
+      if not pickup_agg.empty:
+        fig_pickup_zones = px.scatter_mapbox(
+          pickup_agg,
+          lat='lat',
+          lon='lon',
+          size='Total Earnings',
+          color='Avg per Trip',
+          hover_name='Address',
+          hover_data={
+            'Total Earnings': ':$,.0f',
+            'Avg per Trip': ':$,.2f',
+            'Trip Count': True,
+            'lat': False,
+            'lon': False
+          },
+          color_continuous_scale='RdYlGn',
+          size_max=30,
+          mapbox_style='streets',
+          height=500
+        )
+        
+        # Auto-zoom
+        lat_range = pickup_agg['lat'].max() - pickup_agg['lat'].min()
+        lon_range = pickup_agg['lon'].max() - pickup_agg['lon'].min()
+        center_lat = (pickup_agg['lat'].max() + pickup_agg['lat'].min()) / 2
+        center_lon = (pickup_agg['lon'].max() + pickup_agg['lon'].min()) / 2
+        max_range = max(lat_range, lon_range) if max(lat_range, lon_range) > 0 else 1
+        
+        if max_range < 0.02:
+          zoom_level = 16
+        elif max_range < 0.05:
+          zoom_level = 15
+        elif max_range < 0.1:
+          zoom_level = 14
+        elif max_range < 0.2:
+          zoom_level = 13
+        elif max_range < 0.5:
+          zoom_level = 12
+        elif max_range < 1:
+          zoom_level = 11
+        elif max_range < 2:
+          zoom_level = 10
+        else:
+          zoom_level = 9
+        
+        fig_pickup_zones.update_layout(
+          margin=dict(l=0, r=0, t=0, b=0),
+          mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom_level),
+          height=500
+        )
+        st.plotly_chart(fig_pickup_zones, use_container_width=True, key="pickup_zones_map")
+      else:
+        st.info("No locations with 2+ trips found")
+    else:
+      geocoded_count = sum(1 for lat, lon in coords_dict.values() if lat and lon)
+      st.warning(f"Only {geocoded_count}/{len(unique_addresses)} addresses could be geocoded. Geocoding service may have limits.")
+  else:
+    st.info("No pickup address data available")
+  
+  st.divider()
+  
+  # ===== TABLE + MAP: TOP CITIES =====
+  st.subheader("🏙️ Top Cities by Earnings")
   
   city_stats = tx.groupby('Pickup City').agg({
     'Net Earnings': ['sum', 'mean', 'count']
@@ -927,30 +1535,132 @@ elif page == "Routes":
   city_stats.columns = ['Total', 'Avg Earnings', 'Trip Count']
   city_stats = city_stats[city_stats['Trip Count'] >= 5].sort_values('Avg Earnings', ascending=False).head(10)
   
+  # Add coordinates for map
+  city_stats['lat'] = city_stats.index.map(lambda x: city_coords.get(x, (dallas_lat, dallas_lon))[0])
+  city_stats['lon'] = city_stats.index.map(lambda x: city_coords.get(x, (dallas_lat, dallas_lon))[1])
+  city_stats_with_coords = city_stats.reset_index()
+  
+  # Map view
+  if not city_stats_with_coords.empty:
+    fig_top_cities = px.scatter_mapbox(
+      city_stats_with_coords,
+      lat='lat',
+      lon='lon',
+      size='Total',
+      color='Avg Earnings',
+      hover_name='Pickup City',
+      hover_data={
+        'Total': ':$,.0f',
+        'Avg Earnings': ':$,.2f',
+        'Trip Count': True,
+        'lat': False,
+        'lon': False
+      },
+      color_continuous_scale='Viridis',
+      size_max=45,
+      mapbox_style='streets',
+      height=450
+    )
+    # Auto-zoom
+    lat_range = city_stats_with_coords['lat'].max() - city_stats_with_coords['lat'].min()
+    lon_range = city_stats_with_coords['lon'].max() - city_stats_with_coords['lon'].min()
+    center_lat = (city_stats_with_coords['lat'].max() + city_stats_with_coords['lat'].min()) / 2
+    center_lon = (city_stats_with_coords['lon'].max() + city_stats_with_coords['lon'].min()) / 2
+    max_range = max(lat_range, lon_range) if max(lat_range, lon_range) > 0 else 1
+    if max_range < 0.2:
+      zoom = 14
+    elif max_range < 0.5:
+      zoom = 12
+    elif max_range < 1:
+      zoom = 11
+    elif max_range < 2:
+      zoom = 10
+    else:
+      zoom = 9
+    fig_top_cities.update_layout(
+      margin=dict(l=0, r=0, t=0, b=0),
+      mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom)
+    )
+    st.plotly_chart(fig_top_cities, use_container_width=True, key="top_cities_map")
+  
+  # Table view
   city_display = city_stats.copy()
   city_display['Total'] = city_display['Total'].apply(format_money)
   city_display['Avg Earnings'] = city_display['Avg Earnings'].apply(format_money)
+  city_display['Trip Count'] = city_display['Trip Count'].astype(int)
   
-  st.dataframe(city_display, width='stretch')
-  st.caption("Focus on cities with high average earnings")
+  st.dataframe(city_display, use_container_width=True)
+  st.caption("Focus on cities with high average earnings and strong trip frequency")
   
   st.divider()
   
-  st.subheader("🍔 Top Restaurants")
+  # ===== TABLE + MAP: TOP RESTAURANTS =====
+  st.subheader("🍔 Top Restaurants by Payouts")
   
   restaurant_stats = tx.groupby('Restaurant').agg({
-    'Net Earnings': ['sum', 'mean', 'count']
+    'Net Earnings': ['sum', 'mean', 'count'],
+    'Pickup City': lambda x: x.mode().iloc[0] if not x.mode().empty else 'Unknown'
   }).round(2)
-  restaurant_stats.columns = ['Total $', 'Avg Per Trip', 'Trips']
+  restaurant_stats.columns = ['Total $', 'Avg Per Trip', 'Trips', 'City']
   restaurant_stats = restaurant_stats[restaurant_stats['Trips'] >= 3].sort_values('Avg Per Trip', ascending=False).head(10)
   
+  # Add coordinates for map
+  restaurant_stats['lat'] = restaurant_stats['City'].map(lambda x: city_coords.get(x, (dallas_lat, dallas_lon))[0])
+  restaurant_stats['lon'] = restaurant_stats['City'].map(lambda x: city_coords.get(x, (dallas_lat, dallas_lon))[1])
+  restaurant_stats_with_coords = restaurant_stats.reset_index()
+  
+  # Map view
+  if not restaurant_stats_with_coords.empty:
+    fig_top_restaurants = px.scatter_mapbox(
+      restaurant_stats_with_coords,
+      lat='lat',
+      lon='lon',
+      size='Total $',
+      color='Avg Per Trip',
+      hover_name='Restaurant',
+      hover_data={
+        'City': True,
+        'Total $': ':$,.0f',
+        'Avg Per Trip': ':$,.2f',
+        'Trips': True,
+        'lat': False,
+        'lon': False
+      },
+      color_continuous_scale='RdYlGn',
+      size_max=40,
+      mapbox_style='streets',
+      height=450
+    )
+    # Auto-zoom
+    lat_range = restaurant_stats_with_coords['lat'].max() - restaurant_stats_with_coords['lat'].min()
+    lon_range = restaurant_stats_with_coords['lon'].max() - restaurant_stats_with_coords['lon'].min()
+    center_lat = (restaurant_stats_with_coords['lat'].max() + restaurant_stats_with_coords['lat'].min()) / 2
+    center_lon = (restaurant_stats_with_coords['lon'].max() + restaurant_stats_with_coords['lon'].min()) / 2
+    max_range = max(lat_range, lon_range) if max(lat_range, lon_range) > 0 else 1
+    if max_range < 0.2:
+      zoom = 14
+    elif max_range < 0.5:
+      zoom = 12
+    elif max_range < 1:
+      zoom = 11
+    elif max_range < 2:
+      zoom = 10
+    else:
+      zoom = 9
+    fig_top_restaurants.update_layout(
+      margin=dict(l=0, r=0, t=0, b=0),
+      mapbox=dict(center=dict(lat=center_lat, lon=center_lon), zoom=zoom)
+    )
+    st.plotly_chart(fig_top_restaurants, use_container_width=True, key="top_restaurants_map")
+  
+  # Table view
   rest_display = restaurant_stats.copy()
   rest_display['Total $'] = rest_display['Total $'].apply(format_money)
   rest_display['Avg Per Trip'] = rest_display['Avg Per Trip'].apply(format_money)
   rest_display['Trips'] = rest_display['Trips'].astype(int)
   
-  st.dataframe(rest_display, width='stretch')
-  st.caption("These restaurants consistently provide good payouts")
+  st.dataframe(rest_display, use_container_width=True)
+  st.caption("These restaurants consistently provide the best payouts per trip")
 
 # ============================================================================
 # PAGE: ANOMALY DETECTION (REMOVED - CONSOLIDATED INTO ISSUES)
@@ -1152,13 +1862,13 @@ elif page == "Payments":
   st.divider()
   
   # Summary metrics
-  st.subheader(" Payment Summary")
+  st.subheader("💵 Payment Summary")
   
   if not audit_df.empty:
-    # Parse payment dates
-    audit_df['Payment Date'] = pd.to_datetime(audit_df['Payment Date'], errors='coerce')
+    # Parse payment dates and strip timezone to keep both columns tz-naive
+    audit_df['Payment Date'] = pd.to_datetime(audit_df['Payment Date'], errors='coerce', utc=True).dt.tz_convert(None)
     if 'Bank Deposit Date' in audit_df.columns:
-      audit_df['Bank Deposit Date'] = pd.to_datetime(audit_df['Bank Deposit Date'], errors='coerce')
+      audit_df['Bank Deposit Date'] = pd.to_datetime(audit_df['Bank Deposit Date'], errors='coerce', utc=True).dt.tz_convert(None)
     
     total_payments = audit_df['Payment Net Earnings'].sum() if 'Payment Net Earnings' in audit_df.columns else 0
     
@@ -1167,18 +1877,128 @@ elif page == "Payments":
     
     # Count matched deposits
     matched = len(audit_df[audit_df['Bank Deposit Date'].notna()]) if 'Bank Deposit Date' in audit_df.columns else 0
-    col2.metric("Deposits Matched", f"{matched}/{len(audit_df)}")
+    total_count = len(audit_df)
+    col2.metric("Deposits Matched", f"{matched}/{total_count}")
     
     # Reconciliation statuses
     if 'Reconciliation Status' in audit_df.columns:
       status_counts = audit_df['Reconciliation Status'].value_counts()
-      col3.metric("Bank Matched", status_counts.get('BANK_MATCHED', 0))
-      col4.metric("Refund Tracked", status_counts.get('REFUND_TRACKED', 0))
+      bank_matched = status_counts.get('BANK_MATCHED', 0)
+      refund_tracked = status_counts.get('REFUND_TRACKED', 0)
+      col3.metric("Bank Matched", bank_matched)
+      col4.metric("Refund Tracked", refund_tracked)
+    
+    # Expandable sections to view specific transactions
+    st.markdown("---")
+    st.markdown("**View Specific Transactions:**")
+    
+    view_option = st.selectbox(
+      "Select Transaction Type",
+      ["All Transactions", "Bank Matched Only", "Unmatched Deposits", "Refund Tracked", "Pending/Issues"],
+      label_visibility="collapsed"
+    )
+    
+    # Filter based on selection
+    if view_option == "Bank Matched Only":
+      filtered_df = audit_df[audit_df['Reconciliation Status'] == 'BANK_MATCHED'].copy()
+      st.success(f"Showing {len(filtered_df)} bank-matched transactions")
+    elif view_option == "Unmatched Deposits":
+      filtered_df = audit_df[audit_df['Bank Deposit Date'].isna()].copy()
+      st.warning(f"Showing {len(filtered_df)} unmatched transactions")
+    elif view_option == "Refund Tracked":
+      filtered_df = audit_df[audit_df['Reconciliation Status'] == 'REFUND_TRACKED'].copy()
+      st.info(f"Showing {len(filtered_df)} refund-tracked transactions")
+    elif view_option == "Pending/Issues":
+      filtered_df = audit_df[~audit_df['Reconciliation Status'].isin(['BANK_MATCHED', 'REFUND_TRACKED'])].copy()
+      st.error(f"Showing {len(filtered_df)} pending/issue transactions")
+    else:
+      filtered_df = audit_df.copy()
+      st.info(f"Showing all {len(filtered_df)} transactions")
+    
+    # Display transactions with expandable details
+    if not filtered_df.empty:
+      st.markdown("**Click on any transaction to see full details:**")
+      
+      for idx, row in filtered_df.iterrows():
+        # Create summary line
+        payment_date_str = pd.to_datetime(row['Payment Date']).strftime('%B %d, %Y') if pd.notna(row.get('Payment Date')) else 'N/A'
+        amount_str = format_money(row.get('Payment Net Earnings', 0))
+        status_str = row.get('Reconciliation Status', 'Unknown')
+        
+        # Status emoji
+        status_emoji = "✅" if status_str == "BANK_MATCHED" else "⚠️" if status_str == "REFUND_TRACKED" else "❌"
+        
+        with st.expander(f"{status_emoji} {payment_date_str} - {amount_str} ({status_str})"):
+          # Create two columns for organized display
+          col1, col2 = st.columns(2)
+          
+          with col1:
+            st.markdown("**📄 Payment Information (Uber)**")
+            if 'Payment Date' in row and pd.notna(row['Payment Date']):
+              st.caption(f"Payment Date: {pd.to_datetime(row['Payment Date']).strftime('%B %d, %Y %I:%M %p')}")
+            if 'Payment Net Earnings' in row:
+              st.caption(f"Amount: {format_money(row['Payment Net Earnings'])}")
+            if 'Payment Period Start' in row and pd.notna(row['Payment Period Start']):
+              st.caption(f"Period Start: {pd.to_datetime(row['Payment Period Start']).strftime('%B %d, %Y')}")
+            if 'Payment Period End' in row and pd.notna(row['Payment Period End']):
+              st.caption(f"Period End: {pd.to_datetime(row['Payment Period End']).strftime('%B %d, %Y')}")
+            if 'Trip Count' in row:
+              st.caption(f"Trips in Period: {row['Trip Count']}")
+            if 'Payment Method' in row:
+              st.caption(f"Payment Method: {row['Payment Method']}")
+          
+          with col2:
+            st.markdown("**🏦 Bank Information**")
+            if 'Bank Deposit Date' in row:
+              deposit_date = pd.to_datetime(row['Bank Deposit Date'], errors='coerce')
+              if pd.notna(deposit_date):
+                st.caption(f"Deposit Date: {deposit_date.strftime('%B %d, %Y')}")
+              else:
+                st.caption("Deposit Date: ⚠️ NOT FOUND IN BANK")
+            if 'Bank Amount' in row and pd.notna(row['Bank Amount']):
+              st.caption(f"Bank Amount: {format_money(row['Bank Amount'])}")
+            if 'Bank Description' in row and pd.notna(row['Bank Description']):
+              st.caption(f"Bank Description: {row['Bank Description']}")
+            if 'Bank Account' in row and pd.notna(row['Bank Account']):
+              st.caption(f"Account: {row['Bank Account']}")
+            
+            st.markdown("**📊 Reconciliation**")
+            if 'Reconciliation Status' in row:
+              st.caption(f"Status: {row['Reconciliation Status']}")
+            if 'Match Confidence' in row and pd.notna(row['Match Confidence']):
+              st.caption(f"Match Confidence: {row['Match Confidence']}")
+            if 'Days to Deposit' in row and pd.notna(row['Days to Deposit']):
+              st.caption(f"Days to Deposit: {int(row['Days to Deposit'])} days")
+          
+          # Show ALL available columns in expandable section
+          st.markdown("---")
+          st.markdown("**🔍 All Available Data:**")
+          
+          # Create a clean display of all non-null values
+          all_data = {}
+          for col in row.index:
+            if pd.notna(row[col]) and row[col] != '':
+              if 'Date' in col or 'Time' in col:
+                try:
+                  all_data[col] = pd.to_datetime(row[col]).strftime('%B %d, %Y %I:%M %p')
+                except:
+                  all_data[col] = str(row[col])
+              elif 'Earnings' in col or 'Amount' in col or 'Fee' in col or 'Tip' in col:
+                try:
+                  all_data[col] = format_money(float(row[col]))
+                except:
+                  all_data[col] = str(row[col])
+              else:
+                all_data[col] = str(row[col])
+          
+          # Display as formatted text
+          for key, value in all_data.items():
+            st.caption(f"**{key}:** {value}")
   
   st.divider()
   
   # Daily breakdown
-  st.subheader(" Daily Payment Timeline")
+  st.subheader("📅 Daily Payment Timeline")
   
   if not audit_df.empty and 'Payment Date' in audit_df.columns:
     # Group by payment date to see daily totals
@@ -1186,7 +2006,8 @@ elif page == "Payments":
       'Payment Net Earnings': 'sum'
     }).reset_index()
     daily_payment.columns = ['Date', 'Payments Reported']
-    daily_payment['Date'] = daily_payment['Date'].astype(str)
+    # Format dates as human-friendly
+    daily_payment['Date'] = pd.to_datetime(daily_payment['Date']).dt.strftime('%B %d, %Y')
     
     # Group by deposit date if available
     if 'Bank Deposit Date' in audit_df.columns:
@@ -1194,7 +2015,7 @@ elif page == "Payments":
         'Payment Net Earnings': 'sum'
       }).reset_index()
       daily_deposit.columns = ['Date', 'Bank Deposited']
-      daily_deposit['Date'] = daily_deposit['Date'].astype(str)
+      daily_deposit['Date'] = pd.to_datetime(daily_deposit['Date']).dt.strftime('%B %d, %Y')
       
       # Merge to compare side-by-side
       daily_comparison = daily_payment.merge(daily_deposit, on='Date', how='outer').fillna(0)
@@ -1206,15 +2027,15 @@ elif page == "Payments":
       display_comparison['Bank Deposited'] = display_comparison['Bank Deposited'].apply(format_money)
       display_comparison['Gap'] = display_comparison['Gap'].apply(format_money)
       
-      st.dataframe(display_comparison, width='stretch', hide_index=True)
+      st.dataframe(display_comparison, use_container_width=True, hide_index=True)
       st.caption("Daily breakdown: When Uber reported payments vs when they hit your bank")
     else:
-      st.dataframe(daily_payment, width='stretch', hide_index=True)
+      st.dataframe(daily_payment, use_container_width=True, hide_index=True)
   
   st.divider()
   
   # Processing delay analysis
-  st.subheader("⏱ Payment Processing Delay")
+  st.subheader("Payment Processing Delay")
   
   if not audit_df.empty and 'Payment Date' in audit_df.columns and 'Bank Deposit Date' in audit_df.columns:
     # Calculate processing delay (days between payment and deposit)
@@ -1435,7 +2256,7 @@ elif page == "Trends":
   st.divider()
   
   # Monthly earnings trend
-  st.subheader(" Monthly Earnings Trend")
+  st.subheader("📊 Monthly Earnings Trend")
   
   monthly = tx.groupby('Month').agg({
     'Net Earnings': 'sum',
@@ -1444,16 +2265,19 @@ elif page == "Trends":
   }).reset_index()
   monthly.columns = ['Month', 'Earnings', 'Trips', 'Total Tips']
   
+  # Add human-friendly month labels for display
+  monthly['Month Display'] = monthly['Month'].apply(format_month_human)
+  
   fig = go.Figure()
   fig.add_trace(go.Bar(
-    x=monthly['Month'],
+    x=monthly['Month Display'],
     y=monthly['Earnings'],
     name='Earnings',
     marker_color='lightgreen',
     yaxis='y'
   ))
   fig.add_trace(go.Scatter(
-    x=monthly['Month'],
+    x=monthly['Month Display'],
     y=monthly['Trips'],
     name='Trips',
     marker_color='red',
@@ -1467,12 +2291,12 @@ elif page == "Trends":
     hovermode='x unified',
     height=400
   )
-  st.plotly_chart(fig, width='stretch')
+  st.plotly_chart(fig, use_container_width=True)
   
   st.divider()
   
   # Key changes
-  st.subheader(" What's Changing?")
+  st.subheader("📈 What's Changing?")
   
   if len(monthly) >= 2:
     last = monthly.iloc[-1]
@@ -1484,14 +2308,18 @@ elif page == "Trends":
     trips_change = ((last['Trips'] - prev['Trips']) / prev['Trips'] * 100) if prev['Trips'] > 0 else 0
     tip_change = ((last['Total Tips'] - prev['Total Tips']) / prev['Total Tips'] * 100) if prev['Total Tips'] > 0 else 0
     
-    col1.metric("Earnings Change", f"{earnings_change:+.1f}%", delta=format_money(last['Earnings'] - prev['Earnings']))
-    col2.metric("Trip Count Change", f"{trips_change:+.1f}%", delta=int(last['Trips'] - prev['Trips']))
-    col3.metric("Tips Change", f"{tip_change:+.1f}%", delta=format_money(last['Total Tips'] - prev['Total Tips']))
+    col1.metric(
+      f"{format_month_human(last['Month'])} vs {format_month_human(prev['Month'])}",
+      format_money(last['Earnings']),
+      delta=f"{earnings_change:+.1f}%"
+    )
+    col2.metric("Trip Count Change", f"{int(last['Trips'])} trips", delta=f"{trips_change:+.1f}%")
+    col3.metric("Tips Change", format_money(last['Total Tips']), delta=f"{tip_change:+.1f}%")
   
   st.divider()
   
   # Projection
-  st.subheader(" Earnings Projection")
+  st.subheader("🔮 Earnings Projection")
   
   if len(monthly) >= 2:
     # Simple linear regression
@@ -1506,15 +2334,264 @@ elif page == "Trends":
     
     last_month_date = pd.to_datetime(monthly.iloc[-1]['Month'] + '-01')
     future_dates = [(last_month_date + pd.DateOffset(months=i+1)).strftime('%Y-%m') for i in range(3)]
+    future_dates_human = [format_month_human(d) for d in future_dates]
     
     st.info(f"""
     Based on your trend:
-    - **Next Month ({future_dates[0]})**: {format_money(max(0, future_earnings[0]))}
-    - **Month After ({future_dates[1]})**: {format_money(max(0, future_earnings[1]))}
-    - **3 Months Out ({future_dates[2]})**: {format_money(max(0, future_earnings[2]))}
+    - **{future_dates_human[0]}**: {format_money(max(0, future_earnings[0]))}
+    - **{future_dates_human[1]}**: {format_money(max(0, future_earnings[1]))}
+    - **{future_dates_human[2]}**: {format_money(max(0, future_earnings[2]))}
     
     (Linear projection - actual results depend on effort and market)
     """)
+
+# ============================================================================
+# PAGE: YEAR-END REPORT
+# ============================================================================
+
+elif page == "Year-End Report":
+  st.title("Annual Performance Report: Executive Summary")
+  st.write("*Comprehensive year-end analysis & transportation business performance review*")
+  
+  st.divider()
+  
+  # Calculate annual metrics
+  total_annual_earnings = tx['Net Earnings'].sum()
+  total_annual_trips = len(tx)
+  total_annual_miles = tx['Trip distance'].sum()
+  avg_per_mile_annual = total_annual_earnings / total_annual_miles if total_annual_miles > 0 else 0
+  avg_per_trip_annual = total_annual_earnings / total_annual_trips if total_annual_trips > 0 else 0
+  refund_count_annual = (tx['Refund'] != 0).sum()
+  refund_rate_annual = (refund_count_annual / total_annual_trips * 100) if total_annual_trips > 0 else 0
+  
+  # Get unique cities and restaurants
+  unique_cities = tx['Pickup City'].nunique()
+  unique_restaurants = tx['Restaurant'].nunique()
+  
+  # Monthly breakdown
+  monthly_data = tx.groupby('Month').agg({
+    'Net Earnings': 'sum',
+    'Trip UUID': 'count',
+    'Trip distance': 'sum'
+  }).reset_index()
+  monthly_data.columns = ['Month', 'Earnings', 'Trips', 'Miles']
+  
+  st.markdown("""
+  ## 📊 EXECUTIVE OVERVIEW
+  
+  This year-end analysis evaluates your courier operation's financial performance, operational efficiency, 
+  and market positioning across a comprehensive data set spanning multiple months of active delivery service.
+  """)
+  
+  # Key metrics cards
+  col1, col2, col3, col4 = st.columns(4)
+  col1.metric("Annual Earnings", format_money(total_annual_earnings), 
+              delta=format_money(monthly_data.iloc[-1]['Earnings'] - monthly_data.iloc[0]['Earnings']) if len(monthly_data) > 1 else None)
+  col2.metric("Total Trips", f"{total_annual_trips:,}", delta="trips")
+  col3.metric("Total Miles", f"{total_annual_miles:,.0f}", delta="miles")
+  col4.metric("Efficiency", format_money(avg_per_mile_annual), delta="$/mile")
+  
+  st.divider()
+  
+  st.markdown(f"""
+  ## 💼 BUSINESS PERFORMANCE ANALYSIS
+  
+  ### Financial Performance
+  
+  Your courier operation generated **{format_money(total_annual_earnings)}** in net earnings across **{total_annual_trips:,}** active trips. 
+  This represents a significant volume of delivery work with measurable profitability metrics. 
+  The average trip yield was **{format_money(avg_per_trip_annual)}**, while your cost efficiency stood at **{format_money(avg_per_mile_annual)} per mile driven**.
+  
+  The transportation network analysis reveals operation across **{unique_cities:,}** unique cities and **{unique_restaurants:,}** distinct restaurants, 
+  indicating a diversified service portfolio. This geographic and vendor diversification is a strength, as it 
+  reduces dependency on any single market or client segment.
+  
+  ### Operational Efficiency Metrics
+  
+  **Efficiency Benchmark:** At **{format_money(avg_per_mile_annual)} per mile**, your operation operates within competitive industry ranges 
+  for micro-mobility courier services. Premium operations typically target **$0.80-$1.20 per mile**. 
+  To improve this metric:
+  
+  - Focus on longer-distance orders (reduces relative overhead)
+  - Minimize empty miles by batching nearby pickups
+  - Prioritize high-tip restaurants during peak hours
+  - Reduce time spent waiting at pickup locations
+  
+  **Trip Frequency:** With **{total_annual_trips:,} trips** across {len(monthly_data)} months of data, your average monthly volume is **{total_annual_trips / len(monthly_data):.0f} trips**. 
+  This indicates consistent demand utilization. However, trip volume variance suggests seasonal or demand-driven fluctuations.
+  """)
+  
+  st.divider()
+  
+  st.markdown("""
+  ### Reimbursement Activity
+  """)
+  
+  col1, col2 = st.columns(2)
+  
+  with col1:
+    st.metric("Reimbursement Rate", f"{refund_rate_annual:.2f}%", 
+              help="Shop & Pay / Order & Pay trips where you paid and were reimbursed")
+    st.caption(f"Total reimbursements: {refund_count_annual}")
+  
+  with col2:
+    direct_pay_rate = 100 - refund_rate_annual
+    st.metric("Direct Pay Rate", f"{direct_pay_rate:.2f}%",
+              help="Percentage of trips where Uber paid directly")
+  
+  st.info(f"""
+  **Reimbursement Overview:** {refund_rate_annual:.2f}% of your trips involved Shop & Pay or Order & Pay reimbursements. 
+  This is a normal part of courier operations - you advance the funds and Uber reimburses when the customer pays. 
+  Monitor reimbursement lag times to ensure timely payment processing.
+  """)
+  
+  st.divider()
+  
+  st.markdown("""
+  ### Monthly Performance Trend
+  """)
+  
+  # Monthly earnings chart
+  fig_monthly = px.bar(
+    monthly_data,
+    x='Month',
+    y='Earnings',
+    title="Monthly Net Earnings Trajectory",
+    color='Earnings',
+    color_continuous_scale='Viridis',
+    height=400
+  )
+  fig_monthly.update_xaxes(title="Month")
+  fig_monthly.update_yaxes(title="Net Earnings ($)")
+  st.plotly_chart(fig_monthly, use_container_width=True)
+  
+  col1, col2 = st.columns(2)
+  with col1:
+    best_month = monthly_data.loc[monthly_data['Earnings'].idxmax()]
+    worst_month = monthly_data.loc[monthly_data['Earnings'].idxmin()]
+    st.metric("Best Month", best_month['Month'], 
+              delta=format_money(best_month['Earnings']))
+    st.caption(f"{best_month['Trips']:.0f} trips, {best_month['Miles']:.0f} miles")
+  
+  with col2:
+    st.metric("Lowest Month", worst_month['Month'],
+              delta=format_money(worst_month['Earnings']),
+              delta_color="inverse")
+    st.caption(f"{worst_month['Trips']:.0f} trips, {worst_month['Miles']:.0f} miles")
+  
+  st.divider()
+  
+  st.markdown("""
+  ### Geographic Market Penetration
+  
+  Your operation spans multiple metropolitan areas within your service region. Market concentration analysis 
+  is essential for business sustainability:
+  """)
+  
+  # Top cities analysis
+  city_annual = tx.groupby('Pickup City').agg({
+    'Net Earnings': 'sum',
+    'Trip UUID': 'count'
+  }).reset_index()
+  city_annual.columns = ['City', 'Earnings', 'Trips']
+  city_annual['Share %'] = (city_annual['Earnings'] / city_annual['Earnings'].sum() * 100).round(1)
+  city_annual = city_annual.sort_values('Earnings', ascending=False).head(8)
+  
+  top_3_concentration = city_annual.head(3)['Share %'].sum()
+  
+  fig_cities = px.pie(
+    city_annual,
+    values='Earnings',
+    names='City',
+    title=f"Earnings Distribution by City (Top {len(city_annual)})",
+    height=450
+  )
+  st.plotly_chart(fig_cities, use_container_width=True)
+  
+  st.markdown(f"""
+  **Market Concentration Analysis:**
+  - Your top 3 cities account for **{top_3_concentration:.1f}%** of total earnings
+  - Geographic diversification: **{unique_cities} unique cities served**
+  - Recommendation: {'Diversify into underperforming cities' if top_3_concentration > 70 else 'Current geographic mix is well-balanced'}
+  """)
+  
+  st.divider()
+  
+  st.markdown("""
+  ### Restaurant Partner Performance
+  
+  Vendor selection significantly impacts earnings consistency and quality:
+  """)
+  
+  # Top restaurants
+  rest_annual = tx.groupby('Restaurant').agg({
+    'Net Earnings': 'sum',
+    'Trip UUID': 'count'
+  }).reset_index()
+  rest_annual.columns = ['Restaurant', 'Earnings', 'Trips']
+  rest_annual = rest_annual.sort_values('Earnings', ascending=False).head(8)
+  
+  fig_restaurants = px.bar(
+    rest_annual,
+    x='Restaurant',
+    y='Earnings',
+    color='Trips',
+    title="Top Restaurants by Annual Revenue",
+    height=400,
+    color_continuous_scale='Spectral'
+  )
+  fig_restaurants.update_xaxes(tickangle=-45)
+  st.plotly_chart(fig_restaurants, use_container_width=True)
+  
+  st.divider()
+  
+  st.markdown(f"""
+  ## 📈 STRATEGIC RECOMMENDATIONS
+  
+  Based on comprehensive analysis of {total_annual_trips:,} trips across {len(monthly_data)} months:
+  
+  **1. REVENUE OPTIMIZATION**
+  - Current $/mile efficiency is {format_money(avg_per_mile_annual)}. Target: Increase to {format_money(avg_per_mile_annual * 1.20)}
+  - Focus on high-tip restaurant partnerships
+  - Shift work hours toward peak demand windows
+  
+  **2. OPERATIONAL SCALING**
+  - Monthly volume is {total_annual_trips / len(monthly_data):.0f} trips—sustainable growth target is +20-30%
+  - Expand to underutilized cities for geographic load balancing
+  - Implement route optimization to reduce empty miles
+  
+  **3. REIMBURSEMENT MANAGEMENT**
+  - Monitor Shop & Pay / Order & Pay reimbursement lag times
+  - Prioritize higher-margin direct-pay trips when available
+  - Track which restaurants have faster reimbursement processing
+  
+  **4. FINANCIAL PLANNING**
+  - Annual earnings: {format_money(total_annual_earnings)}
+  - Projected monthly average: {format_money(total_annual_earnings / len(monthly_data))}
+  - Reserve 15-20% for vehicle maintenance, insurance, fuel fluctuations
+  
+  **5. COMPETITIVE POSITIONING**
+  - Benchmark against industry standards: $0.80-1.20/mile for experienced couriers
+  - Your current position: {'Below' if avg_per_mile_annual < 0.80 else 'At' if avg_per_mile_annual < 1.20 else 'Above'} industry average
+  - Path to premium tier: Focus on quality, reliability, and geographic coverage
+  """)
+  
+  st.divider()
+  
+  st.markdown(f"""
+  ## 🎯 CONCLUSION
+  
+  This year demonstrates a **operationally sound and financially viable** courier business. 
+  With {total_annual_trips:,} trips and {format_money(total_annual_earnings)} in earnings, 
+  you've established a sustainable delivery operation with clear growth opportunities.
+  
+  **Primary Focus for Next Year:**
+  1. Increase efficiency from {format_money(avg_per_mile_annual)}/mile → {format_money(avg_per_mile_annual * 1.20)}/mile
+  2. Expand monthly volume from {total_annual_trips / len(monthly_data):.0f} → {total_annual_trips / len(monthly_data) * 1.25:.0f} trips
+  3. Monitor reimbursement processing: Track Shop & Pay lag times
+  
+  *Report Generated: Year-End {pd.Timestamp.now().year} | Data Period: {format_month_human(monthly_data.iloc[0]['Month'])} - {format_month_human(monthly_data.iloc[-1]['Month'])}*
+  """)
 
 st.divider()
 st.caption("Courier Insights • Purpose-built for courier optimization • Last updated: today")
