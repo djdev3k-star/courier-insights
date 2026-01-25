@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300">
+  <defs>
+    <style>
+      .network-line { stroke: #FF8C00; stroke-width: 3; fill: none; }
+      .network-node { fill: #FF8C00; stroke: #19376D; stroke-width: 2; }
+      .text-main { font-family: 'Arial', 'Helvetica', sans-serif; font-size: 56px; font-weight: bold; fill: #19376D; }
+      .text-sub { font-family: 'Arial', 'Helvetica', sans-serif; font-size: 24px; fill: #4682B4; }
+    </style>
+  </defs>
+  
+  <!-- Main horizontal line -->
+  <line x1="100" y1="150" x2="500" y2="150" class="network-line"/>
+  
+  <!-- Network nodes on main line -->
+  <circle cx="100" cy="150" r="12" class="network-node"/>
+  <circle cx="200" cy="150" r="12" class="network-node"/>
+  <circle cx="300" cy="150" r="12" class="network-node"/>
+  <circle cx="400" cy="150" r="12" class="network-node"/>
+  <circle cx="500" cy="150" r="12" class="network-node"/>
+  
+  <!-- Company name -->
+  <text x="300" y="240" text-anchor="middle" class="text-main">JTech Logistics</text>
+  <text x="300" y="270" text-anchor="middle" class="text-sub">Delivery Solutions</text>
+</svg>
