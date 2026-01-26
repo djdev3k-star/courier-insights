@@ -4,6 +4,7 @@ Run this once to build the complete geocoded address cache
 
 Falls back to city-level geocoding if Nominatim is unavailable
 """
+import os
 import pandas as pd
 from pathlib import Path
 import time
@@ -54,6 +55,9 @@ def extract_city_from_address(address):
 
 def geocode_address_nominatim(address):
     """Try to geocode with Nominatim (requires geopy)"""
+    # Allow fast runs that skip Nominatim entirely
+    if os.environ.get('FALLBACK_ONLY') == '1':
+        return None, None
     try:
         from geopy.geocoders import Nominatim
         from geopy.exc import GeocoderTimedOut, GeocoderServiceError
@@ -111,16 +115,22 @@ def main():
     print("🔍 Collecting addresses from transaction files...")
     addresses = set()
     
-    # Find all transaction CSV files
+    # Find all transaction CSV files and collect pickup/dropoff addresses
     reports_dir = Path('reports/monthly_comprehensive')
     if reports_dir.exists():
         for csv_file in reports_dir.glob('*.csv'):
             try:
                 df = pd.read_csv(csv_file)
+                count_added = 0
                 if 'Pickup address' in df.columns:
                     file_addresses = df['Pickup address'].dropna().unique()
                     addresses.update(file_addresses)
-                    print(f"  ✓ {csv_file.name}: {len(file_addresses)} addresses")
+                    count_added += len(file_addresses)
+                if 'Drop off address' in df.columns:
+                    file_addresses2 = df['Drop off address'].dropna().unique()
+                    addresses.update(file_addresses2)
+                    count_added += len(file_addresses2)
+                print(f"  ✓ {csv_file.name}: {count_added} addresses")
             except Exception as e:
                 print(f"  ✗ Error reading {csv_file.name}: {e}")
     
@@ -139,7 +149,20 @@ def main():
     nominatim_count = 0
     fallback_count = 0
     
-    for idx, addr in enumerate(addresses):
+    # Load existing cache to avoid re-geocoding
+    cache_path = Path('data/geocoded_addresses.csv')
+    cached = pd.DataFrame(columns=['address','latitude','longitude'])
+    if cache_path.exists():
+        try:
+            cached = pd.read_csv(cache_path)
+        except Exception:
+            cached = pd.DataFrame(columns=['address','latitude','longitude'])
+    already = set(cached['address'].dropna().unique()) if not cached.empty else set()
+    to_geocode = [a for a in addresses if a not in already]
+    print(f"🔁 Skipping {len(already)} already cached; geocoding {len(to_geocode)} new addresses")
+
+    FALLBACK_ONLY = os.environ.get('FALLBACK_ONLY') == '1'
+    for idx, addr in enumerate(to_geocode):
         addr_display = addr[:50] + "..." if len(addr) > 50 else addr
         print(f"  [{idx+1}/{len(addresses)}] {addr_display}", end='', flush=True)
         
@@ -170,8 +193,9 @@ def main():
                 failed.append(addr)
                 print(f" ✗ (no city found)")
         
-        # Rate limit for Nominatim
-        time.sleep(0.1)
+        # Rate limit only when using Nominatim; fast mode skips
+        if not FALLBACK_ONLY:
+            time.sleep(1.0)
     
     # Save to CSV
     print(f"\n💾 Saving {len(geocoded_data)} geocoded addresses...", end='', flush=True)
@@ -180,7 +204,10 @@ def main():
     output_dir.mkdir(exist_ok=True)
     
     df_geocoded = pd.DataFrame(geocoded_data)
-    df_geocoded.to_csv('data/geocoded_addresses.csv', index=False)
+    # Append to existing cache and deduplicate
+    combined = pd.concat([cached, df_geocoded], ignore_index=True)
+    combined = combined.drop_duplicates(subset=['address'], keep='first')
+    combined.to_csv('data/geocoded_addresses.csv', index=False)
     
     print(f" ✓\n")
     
