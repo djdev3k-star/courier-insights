@@ -180,8 +180,8 @@ All 7 pages display:
 # Make sure dependencies are installed
 pip install -r requirements.txt
 
-# Run with correct Python path
-C:/Users/dj-dev/Documents/courier/.venv/Scripts/python.exe -m streamlit run courier_insights.py
+# Run with correct Python path (adjust path to your virtual environment)
+python -m streamlit run courier_insights.py
 ```
 
 ### Data not loading

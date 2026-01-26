@@ -8,12 +8,15 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
+import os
 from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Courier Insights", layout="wide", initial_sidebar_state="expanded")
 
-# Mapbox configuration
-px.set_mapbox_access_token('pk.eyJ1IjoibXBieDE1IiwiYSI6ImNta2Y1a3dxZzAzZ3AzZ29qNXQ1bmpiaGsifQ.tCkudl7SJNzzHCARPEzC9w')
+# Mapbox configuration - use environment variable for security
+mapbox_token = os.getenv('MAPBOX_TOKEN')
+if mapbox_token:
+    px.set_mapbox_access_token(mapbox_token)
 
 # ============================================================================
 # CUSTOM STYLING
