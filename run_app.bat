@@ -1,0 +1,3 @@
+@echo off
+echo Starting Courier Insights Dashboard...
+wsl bash -c "cd /mnt/c/Users/dj-dev/Documents/courier && /home/dj-dev/.local/bin/streamlit run courier_insights.py --server.port 8501"
