@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaTeX Report Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #f0f0f0;
+        }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .file-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .file-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        .file-card h3 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+
+        .file-card p {
+            font-size: 0.9em;
+            opacity: 0.95;
+            margin-bottom: 15px;
+        }
+
+        .file-card .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-tex {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-tex:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-pdf {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-pdf:hover {
+            background: #f0f0f0;
+        }
+
+        .btn-md {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .btn-md:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .alert {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert.info {
+            background: #dbeafe;
+            border-left-color: #3b82f6;
+        }
+
+        .alert.success {
+            background: #d1fae5;
+            border-left-color: #10b981;
+        }
+
+        .instructions {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .instructions h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .instructions code {
+            background: #e5e7eb;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .status-ready {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-pending {
+            background: #f59e0b;
+            color: white;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📄 LaTeX Report Viewer</h1>
+            <p>Professional PDF reports generated from markdown documentation</p>
+        </header>
+
+        <div class="alert info">
+            <strong>ℹ️ About LaTeX:</strong> LaTeX files (.tex) are source documents that compile to beautifully formatted PDFs with professional typography, tables, and layouts.
+        </div>
+
+        <div class="section">
+            <h2>📊 Available Reports</h2>
+            
+            <div class="file-grid">
+                <div class="file-card">
+                    <h3>Performance Analysis</h3>
+                    <p>Actual vs. Recommended behavior comparison. Grade: F (33.3%)</p>
+                    <div class="buttons">
+                        <a href="reports/latex/ACTUAL_VS_RECOMMENDED_REPORT.tex" class="btn btn-tex" download>📝 .TEX</a>
+                        <a href="reports/latex/ACTUAL_VS_RECOMMENDED_REPORT.pdf" class="btn btn-pdf" target="_blank">📄 PDF</a>
+                        <a href="docs/ACTUAL_VS_RECOMMENDED_REPORT.md" class="btn btn-md" target="_blank">📑 MD</a>
+                    </div>
+                    <span class="status-badge status-ready">✓ Ready</span>
+                </div>
+
+                <div class="file-card">
+                    <h3>Schedule Optimization</h3>
+                    <p>Optimal work schedule targeting $3,050/month with peak hours analysis</p>
+                    <div class="buttons">
+                        <a href="reports/latex/SCHEDULE_OPTIMIZATION_PLAN.tex" class="btn btn-tex" download>📝 .TEX</a>
+                        <a href="reports/latex/SCHEDULE_OPTIMIZATION_PLAN.pdf" class="btn btn-pdf" target="_blank">📄 PDF</a>
+                        <a href="docs/SCHEDULE_OPTIMIZATION_PLAN.md" class="btn btn-md" target="_blank">📑 MD</a>
+                    </div>
+                    <span class="status-badge status-ready">✓ Ready</span>
+                </div>
+
+                <div class="file-card">
+                    <h3>Spending Correlation</h3>
+                    <p>Analysis of spending patterns during restaurant pickups. Save $470/month</p>
+                    <div class="buttons">
+                        <a href="reports/latex/SCHEDULE_SPENDING_CORRELATION_REPORT.tex" class="btn btn-tex" download>📝 .TEX</a>
+                        <a href="reports/latex/SCHEDULE_SPENDING_CORRELATION_REPORT.pdf" class="btn btn-pdf" target="_blank">📄 PDF</a>
+                        <a href="docs/SCHEDULE_SPENDING_CORRELATION_REPORT.md" class="btn btn-md" target="_blank">📑 MD</a>
+                    </div>
+                    <span class="status-badge status-ready">✓ Ready</span>
+                </div>
+
+                <div class="file-card">
+                    <h3>Merchant Analysis</h3>
+                    <p>Deep dive into $3,982 uncategorized spending by merchant type</p>
+                    <div class="buttons">
+                        <a href="reports/latex/UNCATEGORIZED_MERCHANT_ANALYSIS_REPORT.tex" class="btn btn-tex" download>📝 .TEX</a>
+                        <a href="reports/latex/UNCATEGORIZED_MERCHANT_ANALYSIS_REPORT.pdf" class="btn btn-pdf" target="_blank">📄 PDF</a>
+                        <a href="docs/UNCATEGORIZED_MERCHANT_ANALYSIS_REPORT.md" class="btn btn-md" target="_blank">📑 MD</a>
+                    </div>
+                    <span class="status-badge status-ready">✓ Ready</span>
+                </div>
+
+                <div class="file-card">
+                    <h3>Expense Report</h3>
+                    <p>Complete financial breakdown: $1,158 reimbursable vs $5,250 personal</p>
+                    <div class="buttons">
+                        <a href="reports/latex/EXPENSE_REPORT.tex" class="btn btn-tex" download>📝 .TEX</a>
+                        <a href="reports/latex/EXPENSE_REPORT.pdf" class="btn btn-pdf" target="_blank">📄 PDF</a>
+                        <a href="docs/EXPENSE_REPORT.md" class="btn btn-md" target="_blank">📑 MD</a>
+                    </div>
+                    <span class="status-badge status-ready">✓ Ready</span>
+                </div>
+
+                <div class="file-card">
+                    <h3>Quick Reference</h3>
+                    <p>One-page cheat sheet with optimal schedule and key metrics</p>
+                    <div class="buttons">
+                        <a href="reports/latex/SCHEDULE_QUICK_REFERENCE.tex" class="btn btn-tex" download>📝 .TEX</a>
+                        <a href="reports/latex/SCHEDULE_QUICK_REFERENCE.pdf" class="btn btn-pdf" target="_blank">📄 PDF</a>
+                        <a href="docs/SCHEDULE_QUICK_REFERENCE.md" class="btn btn-md" target="_blank">📑 MD</a>
+                    </div>
+                    <span class="status-badge status-pending">⏳ Compile needed</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ How to Compile LaTeX to PDF</h2>
+            
+            <div class="alert">
+                <strong>⚠️ Note:</strong> PDFs are not generated yet. You need to compile the .TEX files using the instructions below.
+            </div>
+
+            <div class="instructions">
+                <h3>Option 1: Batch Compile (Windows)</h3>
+                <ol>
+                    <li>Double-click <code>compile_latex.bat</code> in the courier folder</li>
+                    <li>Wait for compilation to complete</li>
+                    <li>PDFs will appear in <code>reports/latex/</code></li>
+                </ol>
+
+                <h3>Option 2: Manual Compile</h3>
+                <ol>
+                    <li>Install MiKTeX or TeX Live:
+                        <ul>
+                            <li><strong>MiKTeX:</strong> <a href="https://miktex.org/download" target="_blank">https://miktex.org/download</a></li>
+                            <li><strong>TeX Live:</strong> <a href="https://www.tug.org/texlive/" target="_blank">https://www.tug.org/texlive/</a></li>
+                        </ul>
+                    </li>
+                    <li>Open Command Prompt</li>
+                    <li>Navigate to: <code>cd c:\Users\dj-dev\Documents\courier\reports\latex</code></li>
+                    <li>Run: <code>pdflatex filename.tex</code></li>
+                    <li>PDF will be created in the same folder</li>
+                </ol>
+
+                <h3>Option 3: Online Compiler (No Installation)</h3>
+                <ol>
+                    <li>Go to <a href="https://www.overleaf.com" target="_blank">Overleaf.com</a> (free account)</li>
+                    <li>Create a new project</li>
+                    <li>Upload the .TEX file</li>
+                    <li>Click "Recompile" to generate PDF</li>
+                    <li>Download the PDF</li>
+                </ol>
+
+                <h3>Option 4: VS Code Extension</h3>
+                <ol>
+                    <li>Install "LaTeX Workshop" extension in VS Code</li>
+                    <li>Open any .TEX file</li>
+                    <li>Press <code>Ctrl+Alt+B</code> to build PDF</li>
+                    <li>Press <code>Ctrl+Alt+V</code> to view PDF</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📝 Convert More Files</h2>
+            <p style="margin-bottom: 20px;">To convert additional markdown files to LaTeX:</p>
+            
+            <div class="instructions">
+                <h3>Single File Conversion</h3>
+                <code>python scripts\markdown_to_latex.py path\to\file.md output.tex</code>
+
+                <h3>Batch Conversion (All Key Reports)</h3>
+                <code>python scripts\markdown_to_latex.py</code>
+
+                <h3>Custom Conversion</h3>
+                <ol>
+                    <li>Edit <code>scripts\markdown_to_latex.py</code></li>
+                    <li>Add your file to the <code>reports</code> list</li>
+                    <li>Run the script</li>
+                </ol>
+            </div>
+        </div>
+
+        <footer>
+            <p>📄 LaTeX Report System</p>
+            <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">
+                Professional typesetting for business analytics • Last updated: January 28, 2026
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Check if PDFs exist and update badges
+        document.addEventListener('DOMContentLoaded', function() {
+            const pdfLinks = document.querySelectorAll('.btn-pdf');
+            
+            pdfLinks.forEach(link => {
+                fetch(link.href, { method: 'HEAD' })
+                    .then(response => {
+                        const card = link.closest('.file-card');
+                        const badge = card.querySelector('.status-badge');
+                        
+                        if (response.ok) {
+                            badge.className = 'status-badge status-ready';
+                            badge.textContent = '✓ PDF Ready';
+                        } else {
+                            badge.className = 'status-badge status-pending';
+                            badge.textContent = '⏳ Compile needed';
+                            link.style.opacity = '0.5';
+                            link.style.pointerEvents = 'none';
+                        }
+                    })
+                    .catch(() => {
+                        const card = link.closest('.file-card');
+                        const badge = card.querySelector('.status-badge');
+                        badge.className = 'status-badge status-pending';
+                        badge.textContent = '⏳ Compile needed';
+                        link.style.opacity = '0.5';
+                        link.style.pointerEvents = 'none';
+                    });
+            });
+        });
+
+        console.log('%c📄 LaTeX Report Viewer', 'font-size: 24px; color: #667eea; font-weight: bold;');
+        console.log('%c5 reports converted to LaTeX format', 'font-size: 14px; color: #666;');
+    </script>
+</body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courier Business Analytics Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #f0f0f0;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover::before {
+            transform: translateX(0);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        .card h3 {
+            font-size: 1.4em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card p {
+            font-size: 0.95em;
+            line-height: 1.6;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card .icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .badge.new {
+            background: #4ade80;
+            color: white;
+        }
+
+        .badge.important {
+            background: #f87171;
+            color: white;
+        }
+
+        .badge.analysis {
+            background: #fbbf24;
+            color: white;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .alert {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert.error {
+            background: #fee2e2;
+            border-left-color: #ef4444;
+        }
+
+        .alert.success {
+            background: #d1fae5;
+            border-left-color: #10b981;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Courier Business Analytics</h1>
+            <p>Comprehensive analysis and optimization tools for your courier operations</p>
+            <p style="margin-top: 10px; color: #999; font-size: 0.9em;">📅 Analysis Period: August - December 2025</p>
+        </header>
+
+        <!-- Key Metrics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Trips</h3>
+                <div class="value">1,077</div>
+                <div class="label">5 months analyzed</div>
+            </div>
+            <div class="stat-card">
+                <h3>Monthly Target</h3>
+                <div class="value">$3,050</div>
+                <div class="label">Optimized earnings goal</div>
+            </div>
+            <div class="stat-card">
+                <h3>Current Spending</h3>
+                <div class="value">$1,282</div>
+                <div class="label">Per month average</div>
+            </div>
+            <div class="stat-card">
+                <h3>Savings Potential</h3>
+                <div class="value">$471</div>
+                <div class="label">Monthly optimization</div>
+            </div>
+        </div>
+
+        <!-- Performance Alert -->
+        <div class="alert error">
+            <strong>⚠️ Data Model Corrected (Phase 9):</strong> Previous metrics had calculation errors. Actual monthly earnings: $1,985 (not $2,165). Actual spending: $1,667 (not $1,282). See corrected reports below.
+        </div>
+        
+        <div class="alert warning" style="margin-top: 15px;">
+            <strong>� SPENDING NOW FULLY ACCOUNTED:</strong> The $8,084 is not "untracked" - it's <strong>$4,565 customer purchases</strong> (matched to trips via cross-reference, should be reimbursed!) + <strong>$241 EV charging</strong> (business expense) + <strong>$3,528 true personal</strong>. Monthly net improves from $318 to <strong>$1,279 with customer reimbursements!</strong> Uber still has $900 payment gap.
+        </div>
+
+        <!-- Quick Start -->
+        <div class="section">
+            <h2>🚀 Quick Start</h2>
+            <input type="text" class="search-box" id="searchBox" placeholder="Search reports, scripts, or documentation...">
+            <div class="quick-actions">
+                <a href="docs/START_HERE.md" class="btn">📖 Start Here</a>
+                <a href="docs/QUICK_START.md" class="btn">⚡ Quick Start Guide</a>
+                <a href="docs/ACTUAL_VS_RECOMMENDED_REPORT.md" class="btn">📊 Performance Review</a>
+                <a href="reports/dashboards/" class="btn">📈 Dashboards</a>
+            </div>
+        </div>
+
+        <!-- Key Reports -->
+        <div class="section">
+            <h2>📑 Key Reports & Analysis</h2>
+            <div class="card-grid" id="reportsGrid">
+                <div class="card" onclick="window.open('QUICK_REFERENCE_PHASE9.md', '_blank')" style="border: 3px solid #ef4444;">
+                    <div class="icon">🔧</div>
+                    <h3>Phase 9: Corrected Data Model</h3>
+                    <p>NEW: All calculation errors fixed. Actual earnings: $1,985/mo. Actual spending: $1,667/mo. Read this first!</p>
+                    <span class="badge important">NEW - START HERE</span>
+                </div>
+
+                <div class="card" onclick="window.open('SPENDING_BREAKDOWN_SUMMARY.md', '_blank')" style="border: 3px solid #10b981;">
+                    <div class="icon">💰</div>
+                    <h3>Complete Spending Breakdown</h3>
+                    <p>NEW: Cross-reference analysis reveals all $8,334 spending: $4,565 customer purchases + $241 EV + $3,528 personal. $913/mo recovery opportunity!</p>
+                    <span class="badge important">NEW - BREAKTHROUGH</span>
+                </div>
+
+                <div class="card" onclick="window.open('CALCULATION_ERROR_REPORT.md', '_blank')" style="border: 3px solid #f59e0b;">
+                    <div class="icon">📊</div>
+                    <h3>Calculation Error Analysis</h3>
+                    <p>UPDATED: 3 errors fixed including spending breakdown. Trips data ($0), Uber gap ($900), Spending now fully accounted.</p>
+                    <span class="badge important">UPDATED</span>
+                </div>
+
+                <div class="card" onclick="window.open('docs/ACTUAL_VS_RECOMMENDED_REPORT.md', '_blank')">
+                    <div class="icon">🎯</div>
+                    <h3>Actual vs. Recommended</h3>
+                    <p>Performance analysis comparing your behavior against optimal recommendations. Grade: F (33.3%)</p>
+                    <span class="badge analysis">NEEDS UPDATE</span>
+                </div>
+
+                <div class="card" onclick="window.open('docs/SCHEDULE_OPTIMIZATION_PLAN.md', '_blank')">
+                    <div class="icon">📅</div>
+                    <h3>Schedule Optimization</h3>
+                    <p>Optimal work schedule targeting $3,050/month with minimal effort. Peak hours: 6-11 PM.</p>
+                    <span class="badge analysis">STILL VALID</span>
+                </div>
+
+                <div class="card" onclick="window.open('docs/SCHEDULE_SPENDING_CORRELATION_REPORT.md', '_blank')">
+                    <div class="icon">💰</div>
+                    <h3>Spending Correlation</h3>
+                    <p>Analysis of spending patterns during restaurant pickups. Save $470/month with meal prep.</p>
+                    <span class="badge new">KEY INSIGHTS</span>
+                </div>
+
+                <div class="card" onclick="window.open('docs/UNCATEGORIZED_MERCHANT_ANALYSIS_REPORT.md', '_blank')">
+                    <div class="icon">🔍</div>
+                    <h3>Merchant Analysis</h3>
+                    <p>Deep dive into $3,982 uncategorized spending. 72% occurs at pickup locations.</p>
+                    <span class="badge analysis">DETAILED</span>
+                </div>
+
+                <div class="card" onclick="window.open('docs/EXPENSE_REPORT.md', '_blank')">
+                    <div class="icon">💵</div>
+                    <h3>Expense Report</h3>
+                    <p>Complete breakdown: $1,158 reimbursable vs. $5,250 personal spending over 5 months.</p>
+                    <span class="badge analysis">NEEDS UPDATE</span>
+                </div>
+
+                <div class="card" onclick="window.open('docs/SCHEDULE_QUICK_REFERENCE.md', '_blank')">
+                    <div class="icon">⚡</div>
+                    <h3>Quick Reference</h3>
+                    <p>One-page summary of optimal schedule, top zones, and peak hours for quick access.</p>
+                    <span class="badge new">CHEAT SHEET</span>
+                </div>
+
+                <div class="card" onclick="window.location.href='latex_viewer.html'" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="icon">📄</div>
+                    <h3>LaTeX Reports (PDF)</h3>
+                    <p>Professional print-ready PDF versions of all reports with beautiful typography.</p>
+                    <span class="badge important">NEW</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Tools -->
+        <div class="section">
+            <h2>🛠️ Analysis Scripts</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.open('scripts/expense_analyzer.py', '_blank')">
+                    <div class="icon">💳</div>
+                    <h3>Expense Analyzer</h3>
+                    <p>Categorizes bank transactions, separates reimbursable vs. personal spending.</p>
+                </div>
+
+                <div class="card" onclick="window.open('scripts/schedule_optimizer.py', '_blank')">
+                    <div class="icon">⏰</div>
+                    <h3>Schedule Optimizer</h3>
+                    <p>Identifies optimal work hours based on historical trip data and earnings patterns.</p>
+                </div>
+
+                <div class="card" onclick="window.open('scripts/deep_merchant_analysis.py', '_blank')">
+                    <div class="icon">🏪</div>
+                    <h3>Merchant Analyzer</h3>
+                    <p>Cross-references expenses with pickup locations, identifies business type patterns.</p>
+                </div>
+
+                <div class="card" onclick="window.open('scripts/actual_vs_recommended_analysis.py', '_blank')">
+                    <div class="icon">📊</div>
+                    <h3>Performance Comparison</h3>
+                    <p>Compares actual behavior against recommended optimal schedule and spending.</p>
+                </div>
+
+                <div class="card" onclick="window.open('scripts/schedule_spending_correlation.py', '_blank')">
+                    <div class="icon">🔗</div>
+                    <h3>Spending Correlator</h3>
+                    <p>Correlates spending patterns with restaurant pickup locations and work hours.</p>
+                </div>
+
+                <div class="card" onclick="window.open('scripts/uncategorized_analysis.py', '_blank')">
+                    <div class="icon">❓</div>
+                    <h3>Uncategorized Inspector</h3>
+                    <p>Analyzes uncategorized transactions, identifies spending triggers at work.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data & Reports -->
+        <div class="section">
+            <h2>📂 Data & Generated Reports</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.open('reports/', '_blank')">
+                    <div class="icon">📈</div>
+                    <h3>Reports Folder</h3>
+                    <p>All generated CSV reports, expense breakdowns, and analysis outputs.</p>
+                </div>
+
+                <div class="card" onclick="window.open('data/consolidated/trips/', '_blank')">
+                    <div class="icon">🚗</div>
+                    <h3>Trip Data</h3>
+                    <p>Consolidated trip activity data for Aug-Dec 2025 (1,077 trips).</p>
+                </div>
+
+                <div class="card" onclick="window.open('bank/', '_blank')">
+                    <div class="icon">🏦</div>
+                    <h3>Bank Statements</h3>
+                    <p>Uber Pro Card statements for expense analysis and reconciliation.</p>
+                </div>
+
+                <div class="card" onclick="window.open('analysis/', '_blank')">
+                    <div class="icon">🔬</div>
+                    <h3>Analysis Scripts</h3>
+                    <p>Reconciliation tools, audit trails, and specialized analysis modules.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Developer/Components -->
+        <div class="section">
+            <h2>🔧 Developer Tools & Components</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.open('docs/COMPONENT_ARCHITECTURE.md', '_blank')">
+                    <div class="icon">🏗️</div>
+                    <h3>Component Architecture</h3>
+                    <p>Modular, reusable components for data analysis, categorization, schedule optimization, and reporting.</p>
+                    <span class="badge important">ADVANCED</span>
+                </div>
+
+                <div class="card" onclick="window.open('docs/COMPONENTS_GETTING_STARTED.md', '_blank')">
+                    <div class="icon">🚀</div>
+                    <h3>Components Guide</h3>
+                    <p>Quick start guide for using modular components. Full code examples and integration patterns.</p>
+                    <span class="badge new">HOW-TO</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation -->
+        <div class="section">
+            <h2>📚 Documentation</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.open('docs/DASHBOARD_GUIDE.md', '_blank')">
+                    <div class="icon">📊</div>
+                    <h3>Dashboard Guide</h3>
+                    <p>How to use the interactive Streamlit dashboards for data visualization.</p>
+                </div>
+
+                <div class="card" onclick="window.open('docs/DEPLOYMENT_GUIDE.md', '_blank')">
+                    <div class="icon">🚀</div>
+                    <h3>Deployment Guide</h3>
+                    <p>Instructions for deploying dashboards and tools to production.</p>
+                </div>
+
+                <div class="card" onclick="window.open('docs/DATA_INTEGRITY_REPORT.md', '_blank')">
+                    <div class="icon">✅</div>
+                    <h3>Data Integrity</h3>
+                    <p>Validation results and data quality assurance reports.</p>
+                </div>
+
+                <div class="card" onclick="window.open('README.md', '_blank')">
+                    <div class="icon">📖</div>
+                    <h3>README</h3>
+                    <p>Project overview, setup instructions, and general information.</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>💼 Courier Business Analytics System</p>
+            <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">Built for optimization and efficiency • Last updated: January 28, 2026</p>
+        </footer>
+    </div>
+
+    <script>
+        // Search functionality
+        const searchBox = document.getElementById('searchBox');
+        const reportsGrid = document.getElementById('reportsGrid');
+        
+        searchBox.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.card');
+            
+            cards.forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                const description = card.querySelector('p').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === '/' && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                searchBox.focus();
+            }
+        });
+
+        console.log('%c📊 Courier Analytics Dashboard', 'font-size: 24px; color: #667eea; font-weight: bold;');
+        console.log('%cPress "/" to search', 'font-size: 14px; color: #666;');
+    </script>
+</body>
+</html>

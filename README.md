@@ -1,325 +1,295 @@
-# Courier Insights Dashboard
+# 📊 Courier Business Analytics System
 
-## Overview
+## Quick Access
+**🌐 Open `index.html` in your browser for easy navigation of all reports and tools**
 
-**Courier Insights** is a purpose-built analytics dashboard for delivery drivers and couriers to analyze their earnings, identify payment issues, optimize routes, and hunt for refund opportunities.
+---
 
-The app processes **monthly bank statements, Uber trip activity, Uber payment history, and refund receipts** to provide actionable insights across 7 interactive pages.
+## 📁 Repository Structure
 
-**Current Data**: 5 months (Aug 2025 – Dec 2025), 1,045 completed trips, $10,823.44 total earnings, fully reconciled.
+```
+courier/
+├── index.html                      # Main navigation dashboard (START HERE!)
+│
+├── docs/                           # All documentation and reports
+│   ├── START_HERE.md              # Getting started guide
+│   ├── QUICK_START.md             # Quick reference
+│   ├── ACTUAL_VS_RECOMMENDED_REPORT.md       # ⚠️ Performance analysis
+│   ├── SCHEDULE_OPTIMIZATION_PLAN.md         # Optimal work schedule
+│   ├── SCHEDULE_SPENDING_CORRELATION_REPORT.md # Spending patterns
+│   ├── UNCATEGORIZED_MERCHANT_ANALYSIS_REPORT.md # Deep merchant analysis
+│   ├── EXPENSE_REPORT.md          # Financial breakdown
+│   ├── SCHEDULE_QUICK_REFERENCE.md # One-page cheat sheet
+│   ├── DASHBOARD_GUIDE.md         # Dashboard usage
+│   ├── DEPLOYMENT_GUIDE.md        # Deployment instructions
+│   ├── DATA_INTEGRITY_REPORT.md   # Data validation
+│   └── ...                        # Other guides and reports
+│
+├── scripts/                        # Python analysis scripts
+│   ├── expense_analyzer.py        # Expense categorization
+│   ├── schedule_optimizer.py      # Schedule optimization
+│   ├── deep_merchant_analysis.py  # Merchant type analysis
+│   ├── actual_vs_recommended_analysis.py  # Performance comparison
+│   ├── schedule_spending_correlation.py   # Spending correlations
+│   ├── uncategorized_analysis.py  # Uncategorized expense review
+│   ├── dashboard.py               # Streamlit dashboard
+│   └── ...                        # Other analysis tools
+│
+├── reports/                        # Generated reports and exports
+│   ├── expense_report_*.csv       # Expense data exports
+│   ├── reimbursable_expenses_*.csv # Business expenses
+│   ├── personal_expenses_*.csv    # Personal spending
+│   ├── uncategorized_*.csv        # Uncategorized analysis
+│   └── dashboards/                # HTML reports
+│
+├── data/                          # Source data
+│   ├── consolidated/
+│   │   ├── trips/                 # Trip activity data
+│   │   └── payments/              # Payment data
+│   ├── raw/                       # Original data files
+│   └── geocoded_addresses.csv     # Location data
+│
+├── bank/                          # Bank statements
+│   └── Uber Pro Card Statement_*.csv
+│
+├── analysis/                      # Specialized analysis modules
+│   ├── comprehensive_monthly_report.py
+│   ├── four_way_reconciliation.py
+│   └── ...
+│
+├── visualizations/                # Visual assets
+│   ├── SCHEDULE_VISUAL_GUIDE.txt
+│   └── JTechLogistics_Logo.svg
+│
+└── README.md                      # This file
+```
+
+---
+
+## 🎯 Key Findings Summary
+
+### Performance Analysis (Aug-Dec 2025)
+
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| Schedule Adherence | 100% optimal hours | 33.3% | ❌ F Grade |
+| Monthly Spending | $811 | $1,282 | ❌ $471 over |
+| Raising Canes | $0 | $138/month | ❌ Complete failure |
+| Peak Hour Usage | 6-11 PM focus | 41.4% | ❌ Low |
+
+**Savings Potential:** $470/month = **$5,640/year** with optimization
 
 ---
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Python 3.14+ (with venv)
-- Uber monthly data exports (trip activity, payment activity)
-- Bank statement CSV
-- Refund receipt tracker
-
-### Installation
-
+### 1. View Main Dashboard
 ```bash
-# Clone the repo
-git clone <repo-url>
-cd courier
+# Open in browser
+start index.html
+```
 
-# Create virtual environment
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-# or source .venv/bin/activate  # Mac/Linux
+### 2. Run Expense Analysis
+```bash
+cd scripts
+python expense_analyzer.py
+```
 
+### 3. Generate Performance Report
+```bash
+cd scripts
+python actual_vs_recommended_analysis.py
+```
+
+### 4. View Interactive Dashboard
+```bash
+cd scripts
+streamlit run dashboard.py
+```
+
+---
+
+## 📊 Most Important Reports
+
+1. **[Actual vs. Recommended](docs/ACTUAL_VS_RECOMMENDED_REPORT.md)** - ⚠️ READ FIRST
+   - Performance grade: F (33.3%)
+   - $2,353 wasted over 5 months
+   - Working 67% during inefficient hours
+
+2. **[Schedule Optimization](docs/SCHEDULE_OPTIMIZATION_PLAN.md)**
+   - Optimal work hours by day
+   - Target: $3,050/month
+   - Peak hours: 6-11 PM
+
+3. **[Spending Correlation](docs/SCHEDULE_SPENDING_CORRELATION_REPORT.md)**
+   - 72% of spending at pickup locations
+   - Raising Canes: $814 total ($30/visit)
+   - Meal prep saves $470/month
+
+4. **[Expense Report](docs/EXPENSE_REPORT.md)**
+   - $1,158 reimbursable
+   - $5,250 personal
+   - Detailed category breakdown
+
+---
+
+## 🛠️ Analysis Tools
+
+### Core Scripts
+
+| Script | Purpose | Output |
+|--------|---------|--------|
+| `expense_analyzer.py` | Categorize bank transactions | 3 CSV files |
+| `schedule_optimizer.py` | Find optimal work hours | Schedule plan |
+| `deep_merchant_analysis.py` | Analyze by merchant type | Detailed CSV |
+| `actual_vs_recommended_analysis.py` | Performance comparison | Console report |
+| `schedule_spending_correlation.py` | Correlate spending patterns | Analysis report |
+
+### Specialized Tools
+
+- `dashboard.py` - Interactive Streamlit dashboard
+- `process_new_month.py` - Monthly data processing
+- `pre_geocode_addresses.py` - Location geocoding
+- Analysis folder - Reconciliation and audit tools
+
+---
+
+## 📈 Data Files
+
+### Input Data
+- **Trip Data:** `data/consolidated/trips/*.csv` (1,077 trips)
+- **Bank Statements:** `bank/Uber Pro Card Statement_*.csv`
+- **Receipts:** `data/receipts/Trip Receipts-Refund Tracker.csv`
+
+### Generated Reports
+- **Expense Reports:** `reports/expense_report_*.csv`
+- **Reimbursable:** `reports/reimbursable_expenses_*.csv`
+- **Personal:** `reports/personal_expenses_*.csv`
+- **Uncategorized:** `reports/uncategorized_*.csv`
+
+---
+
+## 🎯 Action Items (Priority Order)
+
+### CRITICAL (Do This Week)
+- [ ] Read [Actual vs. Recommended Report](docs/ACTUAL_VS_RECOMMENDED_REPORT.md)
+- [ ] Stop working after 11 PM (shift to 6-10 PM)
+- [ ] Eliminate Raising Canes ($138/month waste)
+
+### HIGH (Do This Month)
+- [ ] Follow [Schedule Optimization Plan](docs/SCHEDULE_OPTIMIZATION_PLAN.md)
+- [ ] Meal prep for Sat/Sun (busiest days)
+- [ ] Pack snacks for late-night shifts
+- [ ] Track daily spending (target $900/month)
+
+### ONGOING
+- [ ] Monitor adherence to optimal schedule
+- [ ] Review spending weekly
+- [ ] Run monthly performance analysis
+
+---
+
+## 💰 Financial Impact
+
+### Current State (Aug-Dec 2025)
+- Monthly earnings: ~$3,000 (estimated)
+- Monthly spending: $1,282
+- Net income: ~$1,718
+
+### With Optimization
+- Monthly earnings: $3,050 (optimized schedule)
+- Monthly spending: $811 (following plan)
+- Net income: $2,239
+- **Improvement: +$521/month (+30%)**
+
+---
+
+## 🔧 Setup & Installation
+
+### Requirements
+```bash
+python 3.14+
+pip install pandas numpy streamlit plotly
+```
+
+### First Time Setup
+```bash
 # Install dependencies
 pip install -r requirements.txt
 
-# Run dashboard
-streamlit run courier_insights.py
-```
-
-The dashboard opens at `http://localhost:8506`
-
----
-
-## 📊 Features (7 Pages)
-
-### 🏠 **Opportunity Finder** (Home)
-- Active alerts (refunds, low-pay trips, high-pay trips)
-- Top 10 best & worst trips
-- Most efficient trips ($/mile)
-- Quick wins to replicate
-
-### 📍 **Location Intelligence**
-- Top cities with average earnings
-- Best restaurants by payout & tips
-- Zip code heat map
-- City-zip detailed breakdown
-- Earnings distribution by location
-
-### ⏰ **Schedule Optimizer**
-- Hourly earnings analysis (best hours to work)
-- Day-of-week performance
-- Trip volume trends
-- Optimal schedule recommendations
-
-### 🛣️ **Mileage Efficiency**
-- Overall $/mile tracking
-- Monthly efficiency trend
-- Trip distance distribution
-- Short vs long trip comparison
-- Efficiency score (1-10)
-
-### ⚠️ **Anomaly Detection**
-- Refund tracking & analysis
-- Low-pay trip detection
-- Zero earnings flags
-- Bank reconciliation status
-- Payment issue dashboard
-
-### 🔍 **Dispute Forensics**
-- Search by filter or Trip ID
-- Full details with pickup/dropoff addresses
-- Export options:
-  - Full details CSV
-  - Trip IDs only (for Uber support)
-  - Summary report
-- Issue breakdown charts
-
-### 📊 **Trends & Forecast**
-- Monthly earnings trend
-- Month-over-month comparison
-- Change metrics (earnings %, trip count %, tips %)
-- 3-month earnings projection
-
----
-
-## 📁 Project Structure
-
-```
-courier/
-├── courier_insights.py          # Main Streamlit dashboard
-├── requirements.txt             # Python dependencies
-├── .gitignore                   # Git ignore rules
-│
-├── analysis/                    # Data processing scripts
-│   ├── audit_trail_export.py
-│   ├── uber_only_reconciliation.py
-│   ├── monthly_comprehensive_report.py
-│   └── four_way_reconciliation.py
-│
-├── data/
-│   └── consolidated/            # Cleaned/consolidated data
-│       ├── trips/               # Trip activity CSVs
-│       └── payments/            # Payment activity CSVs
-│
-├── bank/                        # Bank statements & refund tracking
-│   ├── bank_statement_*.csv
-│   └── refund_status.csv
-│
-├── reports/                     # Generated reports (pre-processed data)
-│   ├── audit_trail/
-│   ├── monthly_comprehensive/
-│   └── four_way_reconciliation/
-│
-└── docs/
-    ├── README.md (this file)
-    ├── DATA_PIPELINE_ARCHITECTURE.md
-    └── QUICK_START.md
+# Run initial analysis
+cd scripts
+python expense_analyzer.py
+python schedule_optimizer.py
 ```
 
 ---
 
-## 🔄 Data Pipeline
+## 📱 Navigation Tips
 
-### Inputs (User provides monthly)
-1. **Uber Trip Activity** → `data/consolidated/trips/`
-2. **Uber Payment Activity** → `data/consolidated/payments/`
-3. **Bank Statement** → `bank/`
-4. **Refund Receipts** → `bank/refund_status.csv`
+- **Use `index.html`** - Visual navigation of all reports
+- **Press `/`** in index.html to search
+- **Start with** `docs/START_HERE.md` for context
+- **Check** `docs/QUICK_START.md` for daily reference
 
-### Processing
-Run analysis scripts to consolidate, clean, and reconcile:
+---
+
+## 🆘 Troubleshooting
+
+### Scripts not running?
 ```bash
-python analysis/audit_trail_export.py
-python analysis/uber_only_reconciliation.py
-python analysis/monthly_comprehensive_report.py
-python analysis/four_way_reconciliation.py
+# Check Python path
+python --version
+
+# Reinstall dependencies
+pip install -r requirements.txt --upgrade
 ```
 
-### Outputs (In `reports/`)
-- Complete audit trail (all data merged)
-- Monthly reconciliation
-- 4-way reconciliation (Trips ↔ Payments ↔ Bank ↔ Receipts)
-- Refund verification
-
-### Dashboard
+### Reports missing?
 ```bash
-streamlit run courier_insights.py
+# Regenerate all reports
+cd scripts
+python expense_analyzer.py
+python actual_vs_recommended_analysis.py
 ```
 
-Dashboard loads from `reports/` and displays all insights interactively.
-
----
-
-## 🎯 Key Metrics (Persistent Sidebar)
-
-All 7 pages display:
-- **YTD Earnings** - Total money made
-- **YTD Miles** - Total distance driven
-- **$/Mile** - Efficiency ratio
-- **Trip Count** - Total deliveries
-- **Refund Rate** - % of refunded trips
-- **Refund Count** - # of refunded trips
-
----
-
-## 🐛 Troubleshooting
-
-### Dashboard won't start
+### Dashboard not loading?
 ```bash
-# Make sure dependencies are installed
-pip install -r requirements.txt
-
-# Run with correct Python path (adjust path to your virtual environment)
-python -m streamlit run courier_insights.py
+cd scripts
+streamlit run dashboard.py --server.port 8501
 ```
-
-### Data not loading
-- Check that CSV files are in correct folders (`data/consolidated/`, `bank/`)
-- Verify file names match expected pattern (dates, company names)
-- See `DATA_PIPELINE_ARCHITECTURE.md` for detailed file structure
-
-### Missing columns error
-- Run analysis scripts first to generate `reports/`
-- Dashboard loads from preprocessed report files, not raw data
-
----
-
-## 📋 Required CSV Formats
-
-### Uber Trip Activity
-```csv
-Trip drop off time,Trip UUID,Pickup address,Drop off address,Trip distance,Trip status,...
-2025-08-28 12:12:56,abc123,Raising Cane's (12320...), 75180,12.89,completed,...
-```
-
-### Uber Payment Activity
-```csv
-vs reporting,Paid to you:Your earnings:Fare:Fare,Paid to you:Your earnings:Tip,...
-2025-08-28 CDT,3.16,6.9,...
-```
-
-### Bank Statement
-```csv
-Date,Description,Amount,Balance
-2025-08-28,Uber App Payout,250.00,5000.00
-```
-
-### Refund Receipts
-```csv
-Trip UUID,Date,Refund Amount,Issue Type,Status
-abc123,2025-08-15,5.00,Customer Complaint,Resolved
-```
-
----
-
-## 📊 Current Reconciliation Status
-
-✅ **Complete & Verified**
-- All 1,045 trips matched to payments
-- Bank deposits reconciled (excluding personal transactions)
-- Multi-account transfers tracked ($636.35)
-- Final gap: $263.57 (2.44% variance - acceptable for processing delays)
-
-See `reports/four_way_reconciliation/multi_account_reconciliation.csv` for details.
-
----
-
-## 🛠️ Development
-
-### Adding new pages to dashboard
-Edit `courier_insights.py`:
-1. Add new option to `page` radio selector
-2. Create new `elif page == "..."` block
-3. Use existing data from `load_data()` function
-4. Add to sidebar navigation
-
-### Modifying analysis logic
-Edit scripts in `analysis/` folder:
-1. Update data processing logic
-2. Run script to regenerate `reports/`
-3. Dashboard automatically loads updated data
-
-### Creating new reports
-1. Create new Python script in `analysis/`
-2. Input: Load from `data/consolidated/` or existing reports
-3. Output: Save to `reports/<category>/`
-4. Dashboard can load via `safe_read()` function
 
 ---
 
 ## 📝 Notes
 
-- **Data Privacy**: All personal data (addresses, amounts) is stored locally only
-- **No Cloud Sync**: Reports are local files, not uploaded anywhere
-- **Reconciliation**: Uses Trip UUID as primary key to match trips ↔ payments ↔ bank deposits
-- **Timezone Handling**: Strips CDT/CST from timestamps before parsing to avoid datetime errors
-- **Bank Filtering**: Automatically excludes personal transactions (filters for "Uber App Payout")
+- All analysis based on Aug-Dec 2025 data
+- Currency: USD
+- Location: Dallas, TX area
+- Business: Uber/food delivery courier
 
 ---
 
-## 🤝 Contributing
+## 🔄 Monthly Workflow
 
-Ideas for enhancements:
-- [ ] Customer rating integration (if available from Uber)
-- [ ] Gas/mileage deduction calculator
-- [ ] Tax summary report
-- [ ] Scheduled report exports (email weekly summary)
-- [ ] Real-time alerts (SMS for high-pay trips)
-- [ ] Multi-platform support (Uber Eats, DoorDash integration)
+1. Process new month: `python scripts/process_new_month.py`
+2. Run expense analysis: `python scripts/expense_analyzer.py`
+3. Generate performance comparison: `python scripts/actual_vs_recommended_analysis.py`
+4. Review reports in `reports/` folder
+5. Update targets based on findings
 
 ---
 
 ## 📞 Support
 
-For issues:
-1. Check `DATA_PIPELINE_ARCHITECTURE.md` for complete data flow
-2. Verify all CSV files are in correct locations
-3. Run analysis scripts to regenerate reports
-4. Check terminal for specific error messages
+For questions or issues, refer to:
+- `docs/DASHBOARD_GUIDE.md` - Dashboard usage
+- `docs/DEPLOYMENT_GUIDE.md` - Setup help
+- `docs/DATA_INTEGRITY_REPORT.md` - Data validation
 
 ---
 
-## 📄 License
-
-Personal use project. Feel free to modify and extend for your courier business.
-
----
-
-**Last Updated**: January 2026  
-**Current Data**: August 2025 – December 2025  
-**Status**: ✅ Production Ready
-
----
-
-## How to Regenerate Reports
-
-```bash
-python analysis/comprehensive_monthly_report.py
-```
-
-This recreates all files in `reports/monthly_comprehensive/`.
-
----
-
-## Data Quality Notes
-
-✓ **Trip-to-Payment Reconciliation**: 100% (0 unpaid trips)  
-✓ **Payment Records**: 4,011 transactions across 1,045 unique trips  
-✓ **Bank Deposits**: 2,294 transactions (deposits + charges)  
-✓ **Date Coverage**: Aug 1 – Dec 31, 2025 (5 months)
-
-Monthly payment-to-bank differences are due to:
-- Bank deposit batching (single bank deposit may include multiple payment dates)
-- Processing delays (transactions post on different dates than payment date)
-- Pending deposits (amounts not yet cleared to bank)
+**Last Updated:** January 28, 2026  
+**Analysis Period:** August - December 2025  
+**Total Trips:** 1,077  
+**Total Expenses:** $6,408
