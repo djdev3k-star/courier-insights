@@ -1,14 +1,44 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Calendar, DollarSign, TrendingUp, ArrowRight, Car, Receipt } from 'lucide-react'
 import { StatCard } from '@/components/StatCard'
 import { SectionCard } from '@/components/SectionCard'
 import { GradientCard } from '@/components/GradientCard'
 import { Alert } from '@/components/Alert'
-import { type AnalyticsSummary } from '@/lib/supabase'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { supabase, type AnalyticsSummary } from '@/lib/supabase'
 
 export function Dashboard() {
-  const [analytics] = useState<AnalyticsSummary | null>(null)
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadAnalytics()
+  }, [])
+
+  async function loadAnalytics() {
+    try {
+      const { data, error } = await supabase
+        .from('analytics_summary')
+        .select('*')
+        .maybeSingle()
+
+      if (error) throw error
+      setAnalytics(data)
+    } catch (error) {
+      console.error('Error loading analytics:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
 
   const monthlyEarnings = analytics?.current_monthly || 1985
   const monthlyExpenses = analytics?.total_expenses ? (analytics.total_expenses / 5) : 1667
