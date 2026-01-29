@@ -16,10 +16,10 @@ export function Alert({ children, variant = 'info', title }: AlertProps) {
   }
 
   const colors = {
-    error: 'alert-error text-red-800',
-    warning: 'alert-warning text-yellow-800',
-    success: 'alert-success text-green-800',
-    info: 'bg-blue-50 border-blue-500 text-blue-800',
+    error: 'alert-error text-red-900',
+    warning: 'alert-warning text-yellow-900',
+    success: 'alert-success text-green-900',
+    info: 'bg-blue-100 border-blue-600 text-blue-900',
   }
 
   const Icon = icons[variant]
@@ -27,10 +27,10 @@ export function Alert({ children, variant = 'info', title }: AlertProps) {
   return (
     <div className={`alert ${colors[variant]}`}>
       <div className="flex items-start space-x-3">
-        <Icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+        <Icon className="w-6 h-6 mt-0.5 flex-shrink-0 font-bold" />
         <div className="flex-1">
-          {title && <p className="font-bold mb-1">{title}</p>}
-          <div className="text-sm">{children}</div>
+          {title && <p className="font-black mb-1 uppercase">{title}</p>}
+          <div className="text-sm font-bold">{children}</div>
         </div>
       </div>
     </div>

@@ -1,27 +1,27 @@
 @import 'tailwindcss';
 
 :root {
-  /* Data Brutalism theme with Royal Blue accent */
-  --background: oklch(1 0 0); /* White */
+  /* Data Brutalism theme with Blue accent */
+  --background: oklch(0.98 0 0); /* Light gray */
   --foreground: oklch(0 0 0); /* Black */
-  --card: oklch(0.98 0 0); /* Off-white */
+  --card: oklch(1 0 0); /* White */
   --card-foreground: oklch(0 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0 0 0);
-  --primary: oklch(0.5 0.2 264); /* Royal Blue #4169E1 */
+  --primary: oklch(0.55 0.18 255); /* Blue #2563eb */
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.5 0 0); /* Medium gray */
   --secondary-foreground: oklch(1 0 0);
   --muted: oklch(0.9 0 0); /* Light gray */
   --muted-foreground: oklch(0.4 0 0);
-  --accent: oklch(0.5 0.2 264); /* Royal Blue accent */
+  --accent: oklch(0.55 0.18 255); /* Blue accent */
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0 0 0); /* Black borders for brutalism */
   --input: oklch(0.9 0 0);
-  --ring: oklch(0.5 0.2 264); /* Royal Blue ring */
-  --chart-1: oklch(0.5 0.2 264); /* Royal Blue */
+  --ring: oklch(0.55 0.18 255); /* Blue ring */
+  --chart-1: oklch(0.55 0.18 255); /* Blue */
   --chart-2: oklch(0.4 0 0); /* Dark gray */
   --chart-3: oklch(0.6 0 0); /* Medium gray */
   --chart-4: oklch(0.8 0 0); /* Light gray */
@@ -29,48 +29,48 @@
   --radius: 0rem; /* No rounded corners for brutalism */
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0 0 0);
-  --sidebar-primary: oklch(0.5 0.2 264);
+  --sidebar-primary: oklch(0.55 0.18 255);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.98 0 0);
   --sidebar-accent-foreground: oklch(0 0 0);
   --sidebar-border: oklch(0 0 0);
-  --sidebar-ring: oklch(0.5 0.2 264);
+  --sidebar-ring: oklch(0.55 0.18 255);
 }
 
 .dark {
-  /* Data Brutalism dark mode - inverted with Royal Blue accent */
+  /* Data Brutalism dark mode - inverted with Blue accent */
   --background: oklch(0 0 0); /* Black */
   --foreground: oklch(1 0 0); /* White */
   --card: oklch(0.1 0 0); /* Near black */
   --card-foreground: oklch(1 0 0);
   --popover: oklch(0 0 0);
   --popover-foreground: oklch(1 0 0);
-  --primary: oklch(0.5 0.2 264); /* Royal Blue */
+  --primary: oklch(0.55 0.18 255); /* Blue */
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.3 0 0); /* Dark gray */
   --secondary-foreground: oklch(1 0 0);
   --muted: oklch(0.2 0 0); /* Dark gray */
   --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.5 0.2 264); /* Royal Blue accent */
+  --accent: oklch(0.55 0.18 255); /* Blue accent */
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0.45 0.2 25);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(1 0 0); /* White borders for dark mode brutalism */
   --input: oklch(0.2 0 0);
-  --ring: oklch(0.5 0.2 264); /* Royal Blue ring */
-  --chart-1: oklch(0.5 0.2 264); /* Royal Blue */
+  --ring: oklch(0.55 0.18 255); /* Blue ring */
+  --chart-1: oklch(0.55 0.18 255); /* Blue */
   --chart-2: oklch(0.4 0 0); /* Dark gray */
   --chart-3: oklch(0.6 0 0); /* Medium gray */
   --chart-4: oklch(0.8 0 0); /* Light gray */
   --chart-5: oklch(0.9 0 0); /* Very light gray */
   --sidebar: oklch(0 0 0);
   --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.5 0.2 264);
+  --sidebar-primary: oklch(0.55 0.18 255);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.1 0 0);
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0);
-  --sidebar-ring: oklch(0.5 0.2 264);
+  --sidebar-ring: oklch(0.55 0.18 255);
 }
 
 @theme inline {

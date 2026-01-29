@@ -7,26 +7,30 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#667eea',
-          dark: '#764ba2',
-          light: '#7c96ff',
+          DEFAULT: '#2563eb',
+          dark: '#1e40af',
+          light: '#3b82f6',
         },
         accent: {
-          green: '#4ade80',
-          red: '#f87171',
-          yellow: '#fbbf24',
-          pink: '#f093fb',
-          rose: '#f5576c',
+          blue: '#2563eb',
+          cyan: '#06b6d4',
+          green: '#10b981',
+          red: '#ef4444',
+          yellow: '#f59e0b',
         },
       },
       backgroundImage: {
-        'gradient-primary': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        'gradient-accent': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+        'gradient-blue': 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
       },
       boxShadow: {
-        'card': '0 5px 15px rgba(0,0,0,0.1)',
-        'card-hover': '0 10px 25px rgba(0,0,0,0.15)',
-        'section': '0 10px 30px rgba(0,0,0,0.2)',
+        'brutal': '8px 8px 0px 0px rgba(0,0,0,1)',
+        'brutal-sm': '4px 4px 0px 0px rgba(0,0,0,1)',
+        'brutal-lg': '12px 12px 0px 0px rgba(0,0,0,1)',
+      },
+      borderWidth: {
+        '3': '3px',
+        '4': '4px',
       },
     },
   },

@@ -16,13 +16,13 @@ export function Dashboard() {
   return (
     <div className="space-y-8">
       <header className="section-card">
-        <h1 className="text-5xl font-bold text-primary mb-3">
+        <h1 className="text-5xl font-black text-blue-600 mb-3 uppercase tracking-tight">
           Courier Business Analytics
         </h1>
-        <p className="text-xl text-gray-600">
+        <p className="text-xl text-black font-bold">
           Comprehensive analysis and optimization tools for your courier operations
         </p>
-        <p className="text-gray-500 mt-2">
+        <p className="text-gray-700 mt-2 font-bold">
           Analysis Period: August - December 2025
         </p>
       </header>
@@ -72,7 +72,7 @@ export function Dashboard() {
         subtitle="Explore your business data and optimization opportunities"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link to="/schedule">
+          <Link to="/schedule" className="block">
             <GradientCard
               title="Schedule Optimization"
               description="Optimal work schedule targeting $3,050/month with minimal effort. Peak hours: 6-11 PM."
@@ -81,7 +81,7 @@ export function Dashboard() {
             />
           </Link>
 
-          <Link to="/expenses">
+          <Link to="/expenses" className="block">
             <GradientCard
               title="Expense Analysis"
               description="Complete breakdown: $1,158 reimbursable vs. $5,250 personal spending over 5 months."
@@ -90,7 +90,7 @@ export function Dashboard() {
             />
           </Link>
 
-          <Link to="/performance">
+          <Link to="/performance" className="block">
             <GradientCard
               title="Performance Review"
               description="Compare actual behavior against optimal recommendations. Current adherence: 33.3%"
@@ -104,7 +104,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <SectionCard title="Peak Performance Hours">
           <div className="space-y-4">
-            <p className="text-gray-600">
+            <p className="text-black font-bold">
               Work these hours aggressively for maximum earnings:
             </p>
             <div className="space-y-3">
@@ -116,13 +116,13 @@ export function Dashboard() {
               ].map((slot) => (
                 <div
                   key={slot.time}
-                  className="flex items-center justify-between p-4 bg-gradient-primary rounded-lg text-white"
+                  className="flex items-center justify-between p-4 bg-blue-600 border-3 border-black text-white"
                 >
                   <div>
-                    <div className="font-bold">{slot.time}</div>
-                    <div className="text-sm opacity-90">{slot.trips} trips</div>
+                    <div className="font-black">{slot.time}</div>
+                    <div className="text-sm font-bold">{slot.trips} trips</div>
                   </div>
-                  <span className="badge bg-white text-primary font-bold">{slot.status}</span>
+                  <span className="badge bg-white text-blue-600">{slot.status}</span>
                 </div>
               ))}
             </div>
@@ -131,7 +131,7 @@ export function Dashboard() {
 
         <SectionCard title="Top Revenue Zones">
           <div className="space-y-4">
-            <p className="text-gray-600">These three zones represent 23% of all orders:</p>
+            <p className="text-black font-bold">These three zones represent 23% of all orders:</p>
             <div className="space-y-3">
               {[
                 { zone: 'TX 75206', trips: 91, percent: '8.5%' },
@@ -140,17 +140,17 @@ export function Dashboard() {
               ].map((zone) => (
                 <div
                   key={zone.zone}
-                  className="flex items-center justify-between p-4 border-2 border-primary rounded-lg hover:bg-primary/5 transition-colors"
+                  className="flex items-center justify-between p-4 border-4 border-blue-600 hover:bg-blue-50 transition-colors"
                 >
                   <div>
-                    <div className="font-bold text-primary">{zone.zone}</div>
-                    <div className="text-sm text-gray-600">{zone.trips} trips</div>
+                    <div className="font-black text-blue-600">{zone.zone}</div>
+                    <div className="text-sm text-black font-bold">{zone.trips} trips</div>
                   </div>
-                  <span className="text-2xl font-bold text-primary">{zone.percent}</span>
+                  <span className="text-2xl font-black text-blue-600">{zone.percent}</span>
                 </div>
               ))}
             </div>
-            <p className="text-sm text-gray-500 mt-4">
+            <p className="text-sm text-gray-700 mt-4 font-bold">
               Strategy: Focus 60% of working time in these zones. Route clustering can save ~20% in
               dead mileage.
             </p>
@@ -161,33 +161,33 @@ export function Dashboard() {
       <SectionCard title="Monthly Earnings Breakdown">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h3 className="text-lg font-bold mb-4">To Hit $3,050/month you need:</h3>
+            <h3 className="text-lg font-black mb-4 uppercase">To Hit $3,050/month you need:</h3>
             <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-green-50 border-l-4 border-green-500 rounded">
-                <span>8 days @ $200</span>
-                <span className="font-bold text-green-700">$1,600</span>
+              <div className="flex justify-between items-center p-3 bg-green-400 border-4 border-black">
+                <span className="font-bold">8 days @ $200</span>
+                <span className="font-black text-black">$1,600</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
-                <span>4 days @ $100</span>
-                <span className="font-bold text-blue-700">$400</span>
+              <div className="flex justify-between items-center p-3 bg-cyan-400 border-4 border-black">
+                <span className="font-bold">4 days @ $100</span>
+                <span className="font-black text-black">$400</span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-purple-50 border-l-4 border-primary rounded">
-                <span>14 days @ $75</span>
-                <span className="font-bold text-primary">$1,050</span>
+              <div className="flex justify-between items-center p-3 bg-yellow-400 border-4 border-black">
+                <span className="font-bold">14 days @ $75</span>
+                <span className="font-black text-black">$1,050</span>
               </div>
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-bold mb-4">Current Status:</h3>
+            <h3 className="text-lg font-black mb-4 uppercase">Current Status:</h3>
             <div className="space-y-4">
-              <div className="p-4 bg-gradient-primary rounded-lg text-white">
-                <div className="text-sm opacity-90">Monthly Average</div>
-                <div className="text-3xl font-bold">${monthlyEarnings}</div>
-                <div className="text-sm opacity-90">Gap to target: ${targetGap}</div>
+              <div className="p-4 bg-blue-600 border-4 border-black text-white">
+                <div className="text-sm font-bold">Monthly Average</div>
+                <div className="text-3xl font-black">${monthlyEarnings}</div>
+                <div className="text-sm font-bold">Gap to target: ${targetGap}</div>
               </div>
-              <div className="p-4 border-2 border-green-500 rounded-lg">
-                <div className="text-sm text-gray-600">Good News:</div>
-                <div className="font-semibold text-green-700">
+              <div className="p-4 border-4 border-green-600 bg-green-100">
+                <div className="text-sm text-black font-bold">Good News:</div>
+                <div className="font-black text-black">
                   You already have 4 guaranteed $200 days locked in (Tue, Thu, Fri, Sat)
                 </div>
               </div>

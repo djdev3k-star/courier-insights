@@ -19,8 +19,8 @@ export function Schedule() {
   return (
     <div className="space-y-8">
       <header className="section-card">
-        <h1 className="text-5xl font-bold text-primary mb-3">Schedule Optimization</h1>
-        <p className="text-xl text-gray-600">
+        <h1 className="text-5xl font-black text-blue-600 mb-3 uppercase tracking-tight">Schedule Optimization</h1>
+        <p className="text-xl text-black font-bold">
           Your personalized earnings optimization plan based on 1,077 actual trips
         </p>
       </header>
@@ -56,17 +56,18 @@ export function Schedule() {
           {schedule.map((day) => (
             <div
               key={day.day}
-              className={`p-6 rounded-xl border-2 transition-all duration-200 ${
+              className={`p-6 border-4 transition-all duration-200 ${
                 day.featured
-                  ? 'border-primary bg-gradient-primary text-white shadow-lg'
-                  : 'border-gray-200 hover:border-primary bg-white'
+                  ? 'border-black bg-blue-600 text-white'
+                  : 'border-blue-600 hover:border-black bg-white'
               }`}
+              style={day.featured ? { boxShadow: '8px 8px 0px 0px rgba(0, 0, 0, 1)' } : {}}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div
-                    className={`w-16 h-16 rounded-lg flex items-center justify-center ${
-                      day.featured ? 'bg-white/20' : 'bg-gradient-primary'
+                    className={`w-16 h-16 flex items-center justify-center border-3 border-black ${
+                      day.featured ? 'bg-white/20' : 'bg-blue-600'
                     }`}
                   >
                     <CalendarIcon
@@ -75,25 +76,25 @@ export function Schedule() {
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="text-xl font-bold">{day.day}</h3>
+                      <h3 className="text-xl font-black uppercase">{day.day}</h3>
                       {day.featured && (
-                        <span className="px-2 py-1 bg-white text-primary text-xs font-bold rounded-full">
-                          ⭐ PRIORITY
+                        <span className="px-2 py-1 bg-white text-blue-600 text-xs font-black border-2 border-black uppercase">
+                          PRIORITY
                         </span>
                       )}
                     </div>
-                    <p className={`mt-1 ${day.featured ? 'text-white/90' : 'text-gray-600'}`}>
+                    <p className={`mt-1 font-bold ${day.featured ? 'text-white' : 'text-gray-700'}`}>
                       {day.shift}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <div
-                    className={`text-3xl font-bold ${day.featured ? 'text-white' : 'text-primary'}`}
+                    className={`text-3xl font-black ${day.featured ? 'text-white' : 'text-blue-600'}`}
                   >
                     ${day.target}
                   </div>
-                  <div className={`text-sm ${day.featured ? 'text-white/80' : 'text-gray-500'}`}>
+                  <div className={`text-sm font-bold ${day.featured ? 'text-white' : 'text-gray-700'}`}>
                     target
                   </div>
                 </div>
@@ -101,15 +102,15 @@ export function Schedule() {
             </div>
           ))}
 
-          <div className="mt-6 p-6 bg-green-50 border-2 border-green-500 rounded-xl">
+          <div className="mt-6 p-6 bg-green-400 border-4 border-black" style={{ boxShadow: '8px 8px 0px 0px rgba(0, 0, 0, 1)' }}>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-green-700 font-semibold uppercase">
+                <div className="text-sm text-black font-black uppercase">
                   Weekly Total
                 </div>
-                <div className="text-gray-600 mt-1">Estimated earnings potential</div>
+                <div className="text-black mt-1 font-bold">Estimated earnings potential</div>
               </div>
-              <div className="text-4xl font-bold text-green-700">${weeklyTotal}</div>
+              <div className="text-4xl font-black text-black">${weeklyTotal}</div>
             </div>
           </div>
         </div>
@@ -118,23 +119,23 @@ export function Schedule() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <SectionCard title="Why This Schedule Works">
           <div className="space-y-4">
-            <div className="border-l-4 border-primary pl-4">
-              <h4 className="font-bold text-primary mb-2">Evening Focus</h4>
-              <p className="text-gray-600">
+            <div className="border-l-4 border-blue-600 pl-4">
+              <h4 className="font-black text-blue-600 mb-2 uppercase">Evening Focus</h4>
+              <p className="text-black font-bold">
                 55% of trips occur 6 PM - 11 PM. Evening orders typically pay 30-50% more than
                 lunch orders.
               </p>
             </div>
-            <div className="border-l-4 border-primary pl-4">
-              <h4 className="font-bold text-primary mb-2">Weekend Priority</h4>
-              <p className="text-gray-600">
+            <div className="border-l-4 border-blue-600 pl-4">
+              <h4 className="font-black text-blue-600 mb-2 uppercase">Weekend Priority</h4>
+              <p className="text-black font-bold">
                 Saturday & Sunday have 2x the trip volume of Monday-Wednesday. Friday kicks off the
                 weekend demand spike.
               </p>
             </div>
-            <div className="border-l-4 border-primary pl-4">
-              <h4 className="font-bold text-primary mb-2">Split Shifts</h4>
-              <p className="text-gray-600">
+            <div className="border-l-4 border-blue-600 pl-4">
+              <h4 className="font-black text-blue-600 mb-2 uppercase">Split Shifts</h4>
+              <p className="text-black font-bold">
                 Lunch (11 AM - 2 PM) provides supplementary income. Evening (6-11 PM) is your
                 primary earning window. Rest between peaks.
               </p>
@@ -144,7 +145,7 @@ export function Schedule() {
 
         <SectionCard title="Top 3 Revenue Zones">
           <div className="space-y-4">
-            <p className="text-gray-600">Focus 60% of your time in these high-volume zones:</p>
+            <p className="text-black font-bold">Focus 60% of your time in these high-volume zones:</p>
             <div className="space-y-3">
               {[
                 { zone: 'TX 75206', trips: 91, revenue: '$1,123' },
@@ -153,20 +154,20 @@ export function Schedule() {
               ].map((zone, index) => (
                 <div
                   key={zone.zone}
-                  className="flex items-center justify-between p-4 bg-gradient-primary rounded-lg text-white"
+                  className="flex items-center justify-between p-4 bg-blue-600 border-3 border-black text-white"
                 >
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center font-bold">
+                    <div className="w-10 h-10 bg-white border-2 border-black flex items-center justify-center font-black text-blue-600">
                       {index + 1}
                     </div>
                     <div>
-                      <div className="font-bold">{zone.zone}</div>
-                      <div className="text-sm opacity-90">{zone.trips} trips</div>
+                      <div className="font-black">{zone.zone}</div>
+                      <div className="text-sm font-bold">{zone.trips} trips</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold">{zone.revenue}</div>
-                    <div className="text-xs opacity-80">estimated</div>
+                    <div className="font-black">{zone.revenue}</div>
+                    <div className="text-xs font-bold">estimated</div>
                   </div>
                 </div>
               ))}
@@ -223,14 +224,14 @@ export function Schedule() {
               ],
             },
           ].map((week) => (
-            <div key={week.week} className="border-2 border-primary rounded-lg p-6">
-              <div className="text-primary font-bold mb-2">{week.week}</div>
-              <h3 className="text-xl font-bold mb-4">{week.title}</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
+            <div key={week.week} className="border-4 border-blue-600 p-6">
+              <div className="text-blue-600 font-black mb-2 uppercase">{week.week}</div>
+              <h3 className="text-xl font-black mb-4 uppercase">{week.title}</h3>
+              <ul className="space-y-2 text-sm text-black">
                 {week.tasks.map((task, i) => (
                   <li key={i} className="flex items-start">
-                    <span className="text-primary mr-2">✓</span>
-                    <span>{task}</span>
+                    <span className="text-blue-600 mr-2 font-bold">✓</span>
+                    <span className="font-bold">{task}</span>
                   </li>
                 ))}
               </ul>
