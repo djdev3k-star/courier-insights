@@ -1,48 +1,11 @@
-import { useEffect, useState } from 'react'
 import { DollarSign, TrendingUp, Receipt, ShoppingBag } from 'lucide-react'
 import { SectionCard } from '@/components/SectionCard'
 import { StatCard } from '@/components/StatCard'
 import { Alert } from '@/components/Alert'
-import { LoadingSpinner } from '@/components/LoadingSpinner'
-import { supabase, type Expense } from '@/lib/supabase'
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts'
 
 export function Expenses() {
-  const [expenses, setExpenses] = useState<Expense[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    loadExpenses()
-  }, [])
-
-  async function loadExpenses() {
-    try {
-      const { data, error } = await supabase
-        .from('expenses')
-        .select('*')
-        .order('date', { ascending: false })
-        .limit(100)
-
-      if (error) throw error
-      setExpenses(data || [])
-    } catch (error) {
-      console.error('Error loading expenses:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
-
-  const totalExpenses = expenses.length > 0
-    ? expenses.reduce((sum, e) => sum + Number(e.amount), 0)
-    : 8334
+  const totalExpenses = 8334
   const reimbursable = 1158
   const customerPurchases = 4565
   const evCharging = 241
