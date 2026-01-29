@@ -67,7 +67,7 @@ body {
   }
 
   .badge {
-    @apply inline-block px-3 py-1 border-3 border-black font-bold text-xs uppercase tracking-wider;
+    @apply inline-block px-3 py-1 border-2 border-black font-bold text-xs uppercase tracking-wider;
   }
 
   .badge-new {
