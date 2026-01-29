@@ -1,37 +1,10 @@
-import { useEffect, useState } from 'react'
 import { DollarSign, TrendingUp, Receipt, ShoppingBag } from 'lucide-react'
 import { SectionCard } from '@/components/SectionCard'
 import { StatCard } from '@/components/StatCard'
 import { Alert } from '@/components/Alert'
-import { LoadingSpinner } from '@/components/LoadingSpinner'
-import { supabase, type Expense } from '@/lib/supabase'
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts'
 
 export function Expenses() {
-  const [, setExpenses] = useState<Expense[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    loadExpenses()
-  }, [])
-
-  async function loadExpenses() {
-    try {
-      const { data, error } = await supabase
-        .from('expenses')
-        .select('*')
-        .order('date', { ascending: false })
-        .limit(100)
-
-      if (error) throw error
-      setExpenses(data || [])
-    } catch (error) {
-      console.error('Error loading expenses:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const totalExpenses = 8334
   const reimbursable = 1158
   const customerPurchases = 4565
@@ -52,14 +25,6 @@ export function Expenses() {
     { name: 'McDonald\'s', amount: 312, visits: 15, type: 'Food' },
     { name: 'Walmart', amount: 287, visits: 8, type: 'Groceries' },
   ]
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-8">
