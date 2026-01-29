@@ -1,4 +1,4 @@
-export type ReportType = 'master-summary' | 'itemized-expenses' | 'monthly-report'
+export type ReportType = 'master-summary' | 'business-expenses' | 'itemized-expenses' | 'monthly-report'
 
 export interface ReportDefinition {
   id: ReportType
@@ -11,13 +11,19 @@ export const AVAILABLE_REPORTS: ReportDefinition[] = [
   {
     id: 'master-summary',
     title: 'Master Summary Report',
-    description: 'Complete financial overview with key metrics and totals',
+    description: 'Business profit analysis with expense classification',
     filename: 'master_summary.tex',
   },
   {
+    id: 'business-expenses',
+    title: 'Business Expenses Only',
+    description: 'Tax-deductible business expenses (EV charging, fuel, phone)',
+    filename: 'business_expenses.tex',
+  },
+  {
     id: 'itemized-expenses',
-    title: 'Itemized Expenses',
-    description: 'Detailed transaction list organized by month',
+    title: 'Complete Expense Report',
+    description: 'All expenses categorized: business, personal, customer purchases',
     filename: 'itemized_expenses.tex',
   },
   {

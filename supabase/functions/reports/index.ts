@@ -12,7 +12,96 @@ interface ReportData {
   expenses: any[];
 }
 
-// Generate LaTeX for itemized expenses
+// Generate business expense report
+function generateBusinessExpenseLatex(expenses: any[]): string {
+  const businessExpenses = expenses.filter(e => e.category === 'business');
+  const monthGroups = businessExpenses.reduce((acc, exp) => {
+    const month = new Date(exp.posted_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    if (!acc[month]) acc[month] = [];
+    acc[month].push(exp);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  const totalAmount = businessExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  let latex = `\\documentclass[11pt,letterpaper]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage[margin=1in]{geometry}
+\\usepackage{longtable}
+\\usepackage{booktabs}
+\\usepackage{xcolor}
+\\usepackage{fancyhdr}
+
+\\definecolor{titleblue}{RGB}{102,126,234}
+\\definecolor{businessgreen}{RGB}{46,125,50}
+
+\\pagestyle{fancy}
+\\fancyhf{}
+\\fancyhead[L]{\\small\\textcolor{titleblue}{Business Expenses - Tax Deductible}}
+\\fancyhead[R]{\\small\\thepage}
+\\renewcommand{\\headrulewidth}{0.5pt}
+
+\\title{\\textcolor{titleblue}{\\textbf{Business Expense Report}}}
+\\author{JTech Logistics}
+\\date{${new Date().toLocaleDateString()}}
+
+\\begin{document}
+
+\\maketitle
+
+\\section*{Summary}
+\\begin{itemize}
+    \\item \\textbf{Total Business Expenses:} \\textcolor{businessgreen}{\\$${totalAmount.toFixed(2)}}
+    \\item \\textbf{Tax Status:} Fully Deductible
+    \\item \\textbf{Transactions:} ${businessExpenses.length}
+    \\item \\textbf{Categories:} EV Charging, Vehicle Fuel, Phone/Internet
+\\end{itemize}
+
+\\newpage
+
+`;
+
+  for (const [month, monthExpenses] of Object.entries(monthGroups)) {
+    const monthTotal = monthExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+    latex += `\\section*{${month}}
+\\textit{\\textcolor{businessgreen}{Business Expenses: \\$${monthTotal.toFixed(2)} (${monthExpenses.length} transactions)}}
+
+\\begin{longtable}{llr}
+\\toprule
+\\textbf{Date} & \\textbf{Description} & \\textbf{Amount} \\\\
+\\midrule
+\\endfirsthead
+\\toprule
+\\textbf{Date} & \\textbf{Description} & \\textbf{Amount} \\\\
+\\midrule
+\\endhead
+\\bottomrule
+\\endfoot
+
+`;
+
+    for (const exp of monthExpenses) {
+      const dateStr = new Date(exp.posted_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' });
+      const desc = String(exp.description || '').substring(0, 50)
+        .replace(/&/g, '\\&').replace(/_/g, '\\_').replace(/#/g, '\\#');
+      latex += `${dateStr} & ${desc} & \\$${Number(exp.amount || 0).toFixed(2)} \\\\\n`;
+    }
+
+    latex += `\\midrule
+\\textbf{Month Total} & & \\textbf{\\$${monthTotal.toFixed(2)}} \\\\
+\\end{longtable}
+\\newpage
+
+`;
+  }
+
+  latex += "\\end{document}";
+  return latex;
+}
+
+// Generate itemized expenses by category
 function generateItemizedExpensesLatex(expenses: any[]): string {
   const monthGroups = expenses.reduce((acc, exp) => {
     const month = new Date(exp.posted_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -21,6 +110,9 @@ function generateItemizedExpensesLatex(expenses: any[]): string {
     return acc;
   }, {} as Record<string, any[]>);
 
+  const businessTotal = expenses.filter(e => e.category === 'business').reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const personalTotal = expenses.filter(e => e.category === 'personal').reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const customerTotal = expenses.filter(e => e.category === 'customer_purchase').reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalAmount = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
   let latex = `\\documentclass[11pt,letterpaper]{article}
@@ -33,15 +125,17 @@ function generateItemizedExpensesLatex(expenses: any[]): string {
 \\usepackage{fancyhdr}
 
 \\definecolor{titleblue}{RGB}{102,126,234}
-\\definecolor{lightgray}{RGB}{240,240,240}
+\\definecolor{businessgreen}{RGB}{46,125,50}
+\\definecolor{personalred}{RGB}{211,47,47}
+\\definecolor{customerblue}{RGB}{25,118,210}
 
 \\pagestyle{fancy}
 \\fancyhf{}
-\\fancyhead[L]{\\small\\textcolor{titleblue}{Itemized Expenses Report}}
+\\fancyhead[L]{\\small\\textcolor{titleblue}{Complete Expense Report by Category}}
 \\fancyhead[R]{\\small\\thepage}
 \\renewcommand{\\headrulewidth}{0.5pt}
 
-\\title{\\textcolor{titleblue}{\\textbf{Itemized Expense Report}}}
+\\title{\\textcolor{titleblue}{\\textbf{Complete Expense Report}}}
 \\author{JTech Logistics}
 \\date{${new Date().toLocaleDateString()}}
 
@@ -49,11 +143,13 @@ function generateItemizedExpensesLatex(expenses: any[]): string {
 
 \\maketitle
 
-\\section*{Summary}
+\\section*{Expense Summary by Category}
 \\begin{itemize}
-    \\item \\textbf{Total Spending:} \\$${totalAmount.toFixed(2)}
-    \\item \\textbf{Total Transactions:} ${expenses.length}
-    \\item \\textbf{Generated:} ${new Date().toLocaleDateString()}
+    \\item \\textcolor{businessgreen}{\\textbf{Business Expenses:}} \\$${businessTotal.toFixed(2)} (Tax Deductible)
+    \\item \\textcolor{customerblue}{\\textbf{Customer Purchases:}} \\$${customerTotal.toFixed(2)} (Reimbursable)
+    \\item \\textcolor{personalred}{\\textbf{Personal Spending:}} \\$${personalTotal.toFixed(2)} (Owner Withdrawals)
+    \\item \\textbf{Total:} \\$${totalAmount.toFixed(2)}
+    \\item \\textbf{Transactions:} ${expenses.length}
 \\end{itemize}
 
 \\newpage
@@ -86,10 +182,10 @@ function generateItemizedExpensesLatex(expenses: any[]): string {
     for (const exp of monthExpenses) {
       const dateStr = new Date(exp.posted_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' });
       const desc = String(exp.description || '').substring(0, 50)
-        .replace(/&/g, '\\&')
-        .replace(/_/g, '\\_')
-        .replace(/#/g, '\\#');
-      latex += `${dateStr} & ${desc} & \\$${Number(exp.amount || 0).toFixed(2)} \\\\\n`;
+        .replace(/&/g, '\\&').replace(/_/g, '\\_').replace(/#/g, '\\#');
+      const cat = exp.category || 'other';
+      const color = cat === 'business' ? 'businessgreen' : cat === 'personal' ? 'personalred' : 'customerblue';
+      latex += `${dateStr} & \\textcolor{${color}}{${desc}} & \\$${Number(exp.amount || 0).toFixed(2)} \\\\\n`;
     }
 
     latex += `\\midrule
@@ -107,8 +203,22 @@ function generateItemizedExpensesLatex(expenses: any[]): string {
 // Generate LaTeX for master summary
 function generateMasterSummaryLatex(data: ReportData): string {
   const totalTrips = data.trips.length;
-  const totalExpenses = data.expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const totalEarnings = data.trips.reduce((sum, t) => sum + Number(t.fare_amount || 0), 0);
+
+  const businessExpenses = data.expenses
+    .filter(e => e.category === 'business')
+    .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  const personalExpenses = data.expenses
+    .filter(e => e.category === 'personal')
+    .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  const customerPurchases = data.expenses
+    .filter(e => e.category === 'customer_purchase')
+    .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  const netBusinessProfit = totalEarnings - businessExpenses;
+  const netAfterWithdrawals = netBusinessProfit - personalExpenses;
 
   return `\\documentclass[11pt,letterpaper]{article}
 \\usepackage[utf8]{inputenc}
@@ -138,37 +248,42 @@ function generateMasterSummaryLatex(data: ReportData): string {
 
 \\section*{Executive Summary}
 
-This comprehensive financial reconciliation report provides complete analysis of trips, earnings, and expenses.
+This comprehensive financial report separates business operations from personal spending, providing accurate profit analysis.
 
-\\subsection*{Key Metrics}
+\\subsection*{Business Performance}
 
 \\begin{tabular}{ll}
 \\toprule
-\\textbf{Metric} & \\textbf{Value} \\\\
+\\textbf{Revenue} & \\textbf{Amount} \\\\
 \\midrule
-Total Trips & ${totalTrips} \\\\
-Total Earnings & \\$${totalEarnings.toFixed(2)} \\\\
-Total Expenses & \\$${totalExpenses.toFixed(2)} \\\\
-Net Profit & \\$${(totalEarnings - totalExpenses).toFixed(2)} \\\\
-Report Generated & ${new Date().toLocaleDateString()} \\\\
+Total Trips Completed & ${totalTrips} \\\\
+Gross Earnings & \\$${totalEarnings.toFixed(2)} \\\\
+Average per Trip & \\$${totalTrips > 0 ? (totalEarnings / totalTrips).toFixed(2) : '0.00'} \\\\
+\\midrule
+\\textbf{Business Expenses} & \\textbf{Amount} \\\\
+\\midrule
+EV Charging, Fuel, Phone & \\$${businessExpenses.toFixed(2)} \\\\
+Customer Purchases (Reimbursable) & \\$${customerPurchases.toFixed(2)} \\\\
+\\midrule
+\\textbf{Net Business Profit} & \\textbf{\\$${netBusinessProfit.toFixed(2)}} \\\\
+\\midrule
+\\textbf{Owner Withdrawals} & \\textbf{Amount} \\\\
+\\midrule
+Personal Spending & \\$${personalExpenses.toFixed(2)} \\\\
+\\midrule
+\\textbf{Net After Withdrawals} & \\textbf{\\$${netAfterWithdrawals.toFixed(2)}} \\\\
 \\bottomrule
 \\end{tabular}
 
 \\vspace{1cm}
 
-\\section*{Trip Analysis}
+\\section*{Expense Classification}
 
-Total completed trips: ${totalTrips}
+\\textbf{Business Expenses (\\$${businessExpenses.toFixed(2)}):} Tax-deductible operating costs including EV charging, vehicle fuel, and phone service.
 
-Average earnings per trip: \\$${(totalEarnings / totalTrips).toFixed(2)}
+\\textbf{Customer Purchases (\\$${customerPurchases.toFixed(2)}):} Reimbursable expenses for customer orders.
 
-\\section*{Expense Analysis}
-
-Total transactions: ${data.expenses.length}
-
-Total amount: \\$${totalExpenses.toFixed(2)}
-
-Average per transaction: \\$${(totalExpenses / data.expenses.length).toFixed(2)}
+\\textbf{Personal Spending (\\$${personalExpenses.toFixed(2)}):} Owner withdrawals not related to business operations
 
 \\vspace{1cm}
 
@@ -294,6 +409,11 @@ Deno.serve(async (req: Request) => {
     let filename = "report.tex";
 
     switch (reportType) {
+      case "business-expenses":
+        latex = generateBusinessExpenseLatex(reportData.expenses);
+        filename = "business_expenses.tex";
+        break;
+
       case "itemized-expenses":
         latex = generateItemizedExpensesLatex(reportData.expenses);
         filename = "itemized_expenses.tex";
@@ -313,7 +433,7 @@ Deno.serve(async (req: Request) => {
         return new Response(
           JSON.stringify({
             error: "Invalid report type",
-            available: ["itemized-expenses", "master-summary", "monthly-report"],
+            available: ["business-expenses", "itemized-expenses", "master-summary", "monthly-report"],
           }),
           {
             status: 400,
